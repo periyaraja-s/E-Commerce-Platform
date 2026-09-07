@@ -72,8 +72,10 @@ export async function register(req, res) {
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
-  const newUser = {
-    _id: 'user_' + Date.now(),
+  const userId = 'mem_usr_' + Date.now();
+  const user = {
+    _id: userId,
+    id: userId,
     name: name.trim(),
     email: normalizedEmail,
     password: passwordHash,

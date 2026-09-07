@@ -12,21 +12,14 @@ const rootDir = path.resolve(__dirname, '../../');
 const clientDir = path.resolve(rootDir, 'client');
 const clientDist = path.resolve(clientDir, 'dist');
 
-const port = process.env.port || 3000;
+const port = Number(process.env.PORT) || 3000;
 
-if (process.env.MONGODB_URI) {
-  connectDatabase(process.env.MONGODB_URI)
-    .then(async () => {
-      try {
-        const { seedInitialData } = await import('./utils/seedData.js');
-        await seedInitialData();
-      } catch (seedErr) {
-        console.warn('[AI Studio] Database seed notice:', seedErr.message);
-      }
-    })
-    .catch((error) => {
-      console.warn('[AI Studio] Database initialization notice:', error.message);
-    });
+try {
+  await connectDatabase(process.env.MONGODB_URI);
+  const { seedInitialData } = await import('./utils/seedData.js');
+  await seedInitialData();
+} catch (error) {
+  console.warn('Database initialization notice:', error.message);
 }
 
 // Development: mount Vite middleware for seamless live SPA serving

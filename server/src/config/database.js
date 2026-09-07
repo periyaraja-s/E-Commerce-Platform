@@ -1,8 +1,12 @@
 import mongoose from 'mongoose';
 
 export async function connectDatabase(uri) {
+  // CRITICAL: fail fast, don't hang when database is offline
+  mongoose.set('bufferCommands', false);
+
   if (!uri) {
-    throw new Error('MONGODB_URI is not configured');
+    console.warn('[AI Studio] MONGODB_URI is not configured — running with fallback mock data');
+    return;
   }
 
   await mongoose.connect(uri, {
@@ -11,3 +15,4 @@ export async function connectDatabase(uri) {
   });
   console.log('MongoDB connected');
 }
+
