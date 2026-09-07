@@ -12,7 +12,7 @@ const rootDir = path.resolve(__dirname, '../../');
 const clientDir = path.resolve(rootDir, 'client');
 const clientDist = path.resolve(clientDir, 'dist');
 
-const port = 3000;
+const port = process.env.port || 3000;
 
 if (process.env.MONGODB_URI) {
   connectDatabase(process.env.MONGODB_URI)
