@@ -9,11 +9,10 @@ export async function connectDatabase(uri) {
     return;
   }
 
-  try {
-    await mongoose.connect(uri, { serverSelectionTimeoutMS: 3000 });
-    console.log('MongoDB connected successfully');
-  } catch (err) {
-    console.warn('[AI Studio] MongoDB connection failed — running with fallback mock data:', err.message);
-  }
+  await mongoose.connect(uri, {
+    serverSelectionTimeoutMS: 5000,
+    connectTimeoutMS: 5000,
+  });
+  console.log('MongoDB connected');
 }
 

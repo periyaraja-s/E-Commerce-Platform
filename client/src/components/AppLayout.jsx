@@ -8,10 +8,12 @@ export default function AppLayout() {
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
+  const isAdmin = user?.role === 'admin';
+
   const navItems = [
     {
       to: '/',
-      label: 'Dashboard',
+      label: isAdmin ? 'Admin Dashboard' : 'Dashboard',
       end: true,
       icon: (
         <svg className="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -24,7 +26,7 @@ export default function AppLayout() {
     },
     {
       to: '/products',
-      label: 'Products',
+      label: isAdmin ? 'Manage Products' : 'Products',
       end: false,
       icon: (
         <svg className="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -48,7 +50,7 @@ export default function AppLayout() {
     },
     {
       to: '/orders',
-      label: 'Orders',
+      label: isAdmin ? 'Store Orders' : 'My Orders',
       end: false,
       icon: (
         <svg className="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -136,12 +138,31 @@ export default function AppLayout() {
         {/* User Info & Logout Footer */}
         <div className="sidebar-footer">
           <div className="user-profile-badge">
-            <div className="user-avatar-circle">{userInitial}</div>
+            <div
+              className="user-avatar-circle"
+              style={{
+                backgroundColor: isAdmin ? '#7c3aed' : '#2563eb',
+              }}
+            >
+              {userInitial}
+            </div>
             <div className="user-meta-info">
               <span className="user-meta-name" title={user?.name || 'User'}>
                 {user?.name || 'User'}
               </span>
-              <span className="user-meta-role">{user?.role || 'Customer'}</span>
+              <span
+                className="user-meta-role"
+                style={{
+                  color: isAdmin ? '#7c3aed' : '#059669',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  textTransform: 'capitalize',
+                }}
+              >
+                {isAdmin ? '🛡️ Admin' : '👤 Customer'}
+              </span>
             </div>
           </div>
           <button

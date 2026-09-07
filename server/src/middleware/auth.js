@@ -19,8 +19,13 @@ export async function protect(req, res, next) {
 
     let user = null;
     if (mongoose.connection.readyState === 1) {
-      user = await User.findById(decoded.userId).select('-password');
-    } else {
+      try {
+        user = await User.findById(decoded.userId).select('-password');
+      } catch {
+        user = null;
+      }
+    }
+    if (!user) {
       user = getMemoryUserById(decoded.userId);
     }
 

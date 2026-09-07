@@ -19,7 +19,7 @@ try {
   const { seedInitialData } = await import('./utils/seedData.js');
   await seedInitialData();
 } catch (error) {
-  console.warn('[AI Studio] Database initialization notice:', error.message);
+  console.warn('Database initialization notice:', error.message);
 }
 
 // Development: mount Vite middleware for seamless live SPA serving
@@ -31,6 +31,7 @@ if (process.env.NODE_ENV !== 'production') {
       server: {
         middlewareMode: true,
         hmr: false,
+        ws: false,
       },
       appType: 'spa',
     });
