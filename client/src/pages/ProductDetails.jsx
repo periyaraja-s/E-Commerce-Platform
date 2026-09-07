@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useCart } from '../context/CartContext.jsx';
 import api from '../services/api.js';
 import ProductFormModal from '../components/ProductFormModal.jsx';
 
@@ -8,6 +9,7 @@ export default function ProductDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { addToCart } = useCart();
   const isAdmin = user?.role === 'admin';
 
   const [product, setProduct] = useState(null);
@@ -51,9 +53,13 @@ export default function ProductDetails() {
     }
   }, [isAdmin]);
 
-  const handleAddToCart = () => {
-    setAddedNotice(true);
-    setTimeout(() => setAddedNotice(false), 2500);
+  const handleAddToCart = async () => {
+    if (!product || product.stock <= 0) return;
+    const res = await addToCart(product, quantity);
+    if (res?.success) {
+      setAddedNotice(true);
+      setTimeout(() => setAddedNotice(false), 2500);
+    }
   };
 
   const handleDelete = async () => {

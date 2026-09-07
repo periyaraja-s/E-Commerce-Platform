@@ -19,28 +19,16 @@ export default function ProductCard({ product, onQuickView }) {
       ? product.images[0]
       : 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80';
 
-  const handleAddToCart = (e) => {
+  const handleAddToCart = async (e) => {
     e.stopPropagation();
 
     if (isOutOfStock) return;
 
-    if (!user) {
-      // Unauthenticated user: redirect to login while preserving the intended action!
-      navigate('/login', {
-        state: {
-          from: '/',
-          action: 'add-to-cart',
-          product,
-          quantity: 1,
-          notice: `Sign in to add "${product.name}" to your shopping cart.`,
-        },
-      });
-      return;
+    const res = await addToCart(product, 1);
+    if (res?.success) {
+      setJustAdded(true);
+      setTimeout(() => setJustAdded(false), 1800);
     }
-
-    addToCart(product, 1);
-    setJustAdded(true);
-    setTimeout(() => setJustAdded(false), 1800);
   };
 
   return (

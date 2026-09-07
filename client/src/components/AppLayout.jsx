@@ -91,12 +91,57 @@ export default function AppLayout() {
           </div>
           <span className="mobile-brand-title">E-Commerce Platform</span>
         </div>
-        <button
-          type="button"
-          className="mobile-toggle-btn"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          aria-label="Toggle navigation menu"
-        >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <NavLink
+            to="/cart"
+            style={{
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 36,
+              height: 36,
+              borderRadius: 8,
+              border: '1px solid var(--border-color)',
+              color: 'var(--text-primary)',
+              textDecoration: 'none',
+            }}
+            aria-label="Shopping Cart"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="9" cy="21" r="1" />
+              <circle cx="20" cy="21" r="1" />
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+            </svg>
+            {cartCount > 0 && (
+              <span
+                style={{
+                  position: 'absolute',
+                  top: -4,
+                  right: -4,
+                  backgroundColor: '#2563eb',
+                  color: '#fff',
+                  fontSize: '0.7rem',
+                  fontWeight: 700,
+                  borderRadius: '9999px',
+                  minWidth: 18,
+                  height: 18,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '0 4px',
+                }}
+              >
+                {cartCount}
+              </span>
+            )}
+          </NavLink>
+          <button
+            type="button"
+            className="mobile-toggle-btn"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle navigation menu"
+          >
           {mobileMenuOpen ? (
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="18" y1="6" x2="6" y2="18" />
@@ -110,6 +155,7 @@ export default function AppLayout() {
             </svg>
           )}
         </button>
+        </div>
       </header>
 
       {/* Backdrop for mobile drawer */}

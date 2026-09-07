@@ -1,20 +1,34 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 
 export default function Cart() {
-  const { items, updateQuantity, removeFromCart, clearCart, cartTotal, cartCount } = useCart();
+  const {
+    items,
+    loading,
+    actionLoading,
+    cartError,
+    fetchCart,
+    updateQuantity,
+    removeFromCart,
+    clearCart,
+    cartSubtotal,
+    cartCount,
+    shipping,
+    tax,
+    grandTotal,
+    toast,
+  } = useCart();
+
+  const { user } = useAuth();
   const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
 
-  const shipping = cartTotal >= 50 ? 0 : 9.99;
-  const tax = cartTotal * 0.08;
-  const grandTotal = cartTotal + (cartTotal > 0 ? shipping + tax : 0);
-
   const handlePlaceOrder = () => {
     setOrderPlaced(true);
-    setTimeout(() => {
-      clearCart();
+    setTimeout(async () => {
+      await clearCart();
       setCheckoutModalOpen(false);
       setOrderPlaced(false);
     }, 2200);
@@ -22,18 +36,32 @@ export default function Cart() {
 
   return (
     <div className="cart-page-container">
-      {/* Header */}
+      {/* Inline Toast Banner if present */}
+      {toast && (
+        <div className={`global-toast-notification ${toast.type || 'success'}`} style={{ position: 'relative', top: 0, left: 0, transform: 'none', marginBottom: 16 }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          <span>{toast.message}</span>
+        </div>
+      )}
+
+      {/* Cart Page Header */}
       <div className="page-header-block">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <div>
             <h1 className="page-title">Shopping Cart</h1>
-            <p className="page-subtitle">Review items, adjust quantities, and proceed to checkout.</p>
+            <p className="page-subtitle">
+              {user ? `Welcome back, ${user.name}. Your cart items are saved to your account.` : 'Review items, adjust quantities, and proceed to checkout.'}
+            </p>
           </div>
-          {items.length > 0 && (
+          {items.length > 0 && !loading && (
             <button
               type="button"
               className="btn-clear-cart"
               onClick={clearCart}
+              disabled={actionLoading}
+              title="Remove all items from your cart"
             >
               Clear Cart
             </button>
@@ -41,10 +69,60 @@ export default function Cart() {
         </div>
       </div>
 
-      {items.length === 0 ? (
+      {/* Error state if server sync failed */}
+      {cartError && (
+        <div
+          style={{
+            marginBottom: 20,
+            padding: '12px 16px',
+            backgroundColor: '#fef2f2',
+            border: '1px solid #fecaca',
+            borderRadius: 8,
+            color: '#991b1b',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span>{cartError}</span>
+          </div>
+          <button
+            type="button"
+            onClick={fetchCart}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#b91c1c',
+              fontWeight: 600,
+              textDecoration: 'underline',
+              cursor: 'pointer',
+            }}
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {/* Loading State */}
+      {loading ? (
+        <div style={{ padding: '48px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, color: 'var(--text-secondary)' }}>
+          <svg className="spinner-icon" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color: 'var(--accent-color)' }}>
+            <circle cx="12" cy="12" r="10" strokeDasharray="32" strokeDashoffset="12" />
+          </svg>
+          <span style={{ fontSize: '0.95rem', fontWeight: 500 }}>Syncing shopping cart...</span>
+        </div>
+      ) : items.length === 0 ? (
+        /* Empty Cart State */
         <div className="placeholder-empty-state">
           <div className="empty-state-icon-box">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="9" cy="21" r="1" />
               <circle cx="20" cy="21" r="1" />
               <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
@@ -52,13 +130,19 @@ export default function Cart() {
           </div>
           <h2 className="empty-state-title">Your Cart is Currently Empty</h2>
           <p className="empty-state-desc">
-            Explore our curated selection of premium audio, workplace essentials, and apparel.
+            Explore our curated catalog of electronics, lifestyle essentials, and apparel.
           </p>
-          <Link to="/" className="btn-empty-cart-action">
-            &larr; Browse Catalog &amp; Shop
-          </Link>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link to="/" className="btn-empty-cart-action">
+              &larr; Browse Storefront
+            </Link>
+            <Link to="/products" className="btn-empty-cart-action" style={{ background: '#f8fafc', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}>
+              View All Products
+            </Link>
+          </div>
         </div>
       ) : (
+        /* Active Cart Content */
         <div className="cart-content-grid">
           {/* Cart Items Column */}
           <div className="cart-items-column">
@@ -69,11 +153,13 @@ export default function Cart() {
               </div>
 
               <div className="cart-items-list">
-                {items.map(({ product, quantity }) => {
+                {items.map(({ product, quantity, itemSubtotal }) => {
+                  if (!product) return null;
                   const pId = product._id || product.id;
                   const itemPrice = Number(product.price) || 0;
-                  const maxStock = typeof product.stock === 'number' ? product.stock : 99;
-                  const itemSubtotal = itemPrice * quantity;
+                  const availableStock = typeof product.stock === 'number' ? product.stock : 99;
+                  const computedSubtotal = itemSubtotal != null ? itemSubtotal : itemPrice * quantity;
+                  const isMaxStockReached = quantity >= availableStock;
                   const imageUrl =
                     Array.isArray(product.images) && product.images[0]
                       ? product.images[0]
@@ -94,11 +180,24 @@ export default function Cart() {
 
                       <div className="cart-item-info-col">
                         <div className="cart-item-category">
-                          {product.category?.name || 'Category'}
+                          {product.category?.name || 'Store Item'}
                         </div>
                         <h3 className="cart-item-name">{product.name}</h3>
                         <div className="cart-item-unit-price">
                           ${itemPrice.toFixed(2)} each
+                        </div>
+
+                        {/* Stock indicator badge */}
+                        <div style={{ marginTop: 4, marginBottom: 8, fontSize: '0.8rem' }}>
+                          {availableStock <= 5 ? (
+                            <span style={{ color: '#b45309', fontWeight: 600 }}>
+                              ⚠️ Only {availableStock} left in stock
+                            </span>
+                          ) : (
+                            <span style={{ color: '#059669', fontWeight: 500 }}>
+                              ✓ In Stock ({availableStock} available)
+                            </span>
+                          )}
                         </div>
 
                         {/* Quantity Stepper & Remove */}
@@ -107,16 +206,19 @@ export default function Cart() {
                             <button
                               type="button"
                               onClick={() => updateQuantity(pId, quantity - 1)}
+                              disabled={actionLoading || quantity <= 1}
                               aria-label="Decrease quantity"
+                              title={quantity <= 1 ? 'Minimum quantity is 1 (use Remove to delete)' : 'Decrease quantity'}
                             >
                               -
                             </button>
                             <span className="cart-quantity-num">{quantity}</span>
                             <button
                               type="button"
-                              onClick={() => updateQuantity(pId, Math.min(maxStock, quantity + 1))}
-                              disabled={quantity >= maxStock}
+                              onClick={() => updateQuantity(pId, quantity + 1)}
+                              disabled={actionLoading || isMaxStockReached}
                               aria-label="Increase quantity"
+                              title={isMaxStockReached ? `Maximum available stock (${availableStock}) reached` : 'Increase quantity'}
                             >
                               +
                             </button>
@@ -126,6 +228,7 @@ export default function Cart() {
                             type="button"
                             className="cart-btn-remove"
                             onClick={() => removeFromCart(pId)}
+                            disabled={actionLoading}
                           >
                             Remove
                           </button>
@@ -134,7 +237,7 @@ export default function Cart() {
 
                       <div className="cart-item-subtotal-col">
                         <span className="cart-item-subtotal">
-                          ${itemSubtotal.toFixed(2)}
+                          ${computedSubtotal.toFixed(2)}
                         </span>
                       </div>
                     </div>
@@ -157,8 +260,8 @@ export default function Cart() {
 
               <div className="summary-rows">
                 <div className="summary-row">
-                  <span>Subtotal</span>
-                  <span>${cartTotal.toFixed(2)}</span>
+                  <span>Subtotal ({cartCount} {cartCount === 1 ? 'item' : 'items'})</span>
+                  <span>${cartSubtotal.toFixed(2)}</span>
                 </div>
 
                 <div className="summary-row">
@@ -174,9 +277,9 @@ export default function Cart() {
                   <span>${tax.toFixed(2)}</span>
                 </div>
 
-                {cartTotal < 50 && (
+                {cartSubtotal < 50 && (
                   <div className="shipping-progress-notice">
-                    Add ${(50 - cartTotal).toFixed(2)} more to qualify for <strong>FREE shipping</strong>!
+                    Add ${(50 - cartSubtotal).toFixed(2)} more to qualify for <strong>FREE shipping</strong>!
                   </div>
                 )}
 
@@ -192,6 +295,7 @@ export default function Cart() {
                 type="button"
                 className="btn-checkout-primary"
                 onClick={() => setCheckoutModalOpen(true)}
+                disabled={actionLoading || items.length === 0}
               >
                 Proceed to Checkout &rarr;
               </button>

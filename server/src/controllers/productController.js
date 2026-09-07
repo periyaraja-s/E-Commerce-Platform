@@ -291,3 +291,9 @@ export async function deleteProduct(req, res) {
   return res.json({ success: true, message: 'Product deactivated successfully' });
 }
 
+export function getMemoryProductById(id) {
+  return memoryProducts.find((p) => p._id === id || p.slug === id || p.id === id);
+}
+
+export { memoryProducts };
+
