@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useCart } from '../context/CartContext.jsx';
 
 export default function AppLayout() {
   const { user, logout } = useAuth();
+  const { cartCount } = useCart();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
@@ -12,7 +14,7 @@ export default function AppLayout() {
 
   const navItems = [
     {
-      to: '/',
+      to: '/dashboard',
       label: isAdmin ? 'Admin Dashboard' : 'Dashboard',
       end: true,
       icon: (
@@ -21,6 +23,17 @@ export default function AppLayout() {
           <rect x="14" y="3" width="7" height="7" rx="1.5" />
           <rect x="14" y="14" width="7" height="7" rx="1.5" />
           <rect x="3" y="14" width="7" height="7" rx="1.5" />
+        </svg>
+      ),
+    },
+    {
+      to: '/',
+      label: 'Storefront',
+      end: true,
+      icon: (
+        <svg className="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+          <polyline points="9 22 9 12 15 12 15 22" />
         </svg>
       ),
     },
@@ -40,6 +53,7 @@ export default function AppLayout() {
       to: '/cart',
       label: 'Cart',
       end: false,
+      badge: cartCount > 0 ? cartCount : null,
       icon: (
         <svg className="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <circle cx="9" cy="21" r="1" />
@@ -130,7 +144,10 @@ export default function AppLayout() {
               className={({ isActive }) => `nav-item-link ${isActive ? 'active' : ''}`}
             >
               {item.icon}
-              <span>{item.label}</span>
+              <span style={{ flex: 1 }}>{item.label}</span>
+              {item.badge != null && (
+                <span className="sidebar-cart-badge">{item.badge}</span>
+              )}
             </NavLink>
           ))}
         </nav>

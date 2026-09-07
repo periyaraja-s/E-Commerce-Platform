@@ -1,10 +1,16 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useCart } from '../context/CartContext.jsx';
 
 export default function Register() {
   const { register } = useAuth();
+  const { addToCart } = useCart();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const intendedAction = location.state?.action;
+  const intendedProduct = location.state?.product;
 
   const [form, setForm] = useState({
     name: '',
@@ -71,7 +77,15 @@ export default function Register() {
     try {
       // Strictly register as customer - public registration never passes role
       await register(form.name.trim(), form.email.trim(), form.password);
-      navigate('/');
+
+      // Check if user had an intended action (e.g. Add to Cart)
+      if (intendedAction === 'add-to-cart' && intendedProduct) {
+        addToCart(intendedProduct, location.state?.quantity || 1);
+        navigate('/cart', { replace: true });
+      } else {
+        const destination = location.state?.from || '/dashboard';
+        navigate(destination, { replace: true });
+      }
     } catch (err) {
       const message =
         err.response?.data?.message ||
@@ -98,6 +112,17 @@ export default function Register() {
           <h1 className="auth-title">Create Account</h1>
           <p className="auth-subtitle">Join us to browse catalog, cart, and track orders</p>
         </div>
+
+        {/* Intended Action Notice Banner */}
+        {intendedAction === 'add-to-cart' && intendedProduct && (
+          <div className="auth-intended-action-banner">
+            <div className="intended-action-icon">🛍️</div>
+            <div className="intended-action-text">
+              <strong>Complete registration to add to cart:</strong>
+              <div className="intended-item-name">{intendedProduct.name} &bull; ${Number(intendedProduct.price).toFixed(2)}</div>
+            </div>
+          </div>
+        )}
 
         {/* Role Notice Affirmation */}
         <div className="auth-role-notice">
@@ -273,9 +298,15 @@ export default function Register() {
 
         {/* Footer Navigation */}
         <div className="auth-footer-nav">
-          Already have an account?
-          <Link to="/login" className="auth-footer-link">
+          Already have an account?{' '}
+          <Link to="/login" state={location.state} className="auth-footer-link">
             Sign In
+          </Link>
+        </div>
+
+        <div style={{ textAlign: 'center', marginTop: 14, paddingTop: 14, borderTop: '1px solid #f1f5f9' }}>
+          <Link to="/" style={{ fontSize: '0.84rem', color: '#64748b', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            &larr; Back to Public Storefront
           </Link>
         </div>
       </div>

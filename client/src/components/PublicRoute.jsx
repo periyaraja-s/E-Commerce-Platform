@@ -16,5 +16,5 @@ export default function PublicRoute() {
       </div>
     );
   }
-  return user ? <Navigate to="/" replace /> : <Outlet />;
+  return user ? <Navigate to="/dashboard" replace /> : <Outlet />;
 }

@@ -1,10 +1,17 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useCart } from '../context/CartContext.jsx';
 
 export default function Login() {
   const { login } = useAuth();
+  const { addToCart } = useCart();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const intendedAction = location.state?.action;
+  const intendedProduct = location.state?.product;
+  const noticeMessage = location.state?.notice;
 
   const [form, setForm] = useState({
     email: '',
@@ -60,7 +67,15 @@ export default function Login() {
     setSubmitting(true);
     try {
       await login(form.email.trim(), form.password);
-      navigate('/');
+
+      // Check if user had an intended action (e.g. Add to Cart)
+      if (intendedAction === 'add-to-cart' && intendedProduct) {
+        addToCart(intendedProduct, location.state?.quantity || 1);
+        navigate('/cart', { replace: true });
+      } else {
+        const destination = location.state?.from || '/dashboard';
+        navigate(destination, { replace: true });
+      }
     } catch (err) {
       const message =
         err.response?.data?.message ||
@@ -86,6 +101,17 @@ export default function Login() {
           <h1 className="auth-title">Welcome back</h1>
           <p className="auth-subtitle">Sign in to your account to continue</p>
         </div>
+
+        {/* Intended Action Notice Banner */}
+        {intendedAction === 'add-to-cart' && intendedProduct && (
+          <div className="auth-intended-action-banner">
+            <div className="intended-action-icon">🛍️</div>
+            <div className="intended-action-text">
+              <strong>Sign in to complete adding to cart:</strong>
+              <div className="intended-item-name">{intendedProduct.name} &bull; ${Number(intendedProduct.price).toFixed(2)}</div>
+            </div>
+          </div>
+        )}
 
         {/* Demo Credentials Helper Box */}
         <div className="auth-demo-box">
@@ -231,9 +257,15 @@ export default function Login() {
 
         {/* Footer Navigation */}
         <div className="auth-footer-nav">
-          Don&apos;t have an account?
-          <Link to="/register" className="auth-footer-link">
+          Don&apos;t have an account?{' '}
+          <Link to="/register" state={location.state} className="auth-footer-link">
             Create Customer Account
+          </Link>
+        </div>
+
+        <div style={{ textAlign: 'center', marginTop: 14, paddingTop: 14, borderTop: '1px solid #f1f5f9' }}>
+          <Link to="/" style={{ fontSize: '0.84rem', color: '#64748b', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            &larr; Back to Public Storefront
           </Link>
         </div>
       </div>
