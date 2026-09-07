@@ -1,0 +1,6 @@
+{
+  "name": "E-Commerce Platform",
+  "description": "Full-stack E-Commerce platform with React frontend and Express backend",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

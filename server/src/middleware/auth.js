@@ -1,5 +1,9 @@
 import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 import User from '../models/User.js';
+import { getMemoryUserById } from '../controllers/authController.js';
+
+const DEFAULT_SECRET = 'ecommerce-platform-dev-secret-key-2026';
 
 export async function protect(req, res, next) {
   try {
@@ -10,8 +14,20 @@ export async function protect(req, res, next) {
     }
 
     const token = header.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId).select('-password');
+    const secret = process.env.JWT_SECRET || DEFAULT_SECRET;
+    const decoded = jwt.verify(token, secret);
+
+    let user = null;
+    if (mongoose.connection.readyState === 1) {
+      try {
+        user = await User.findById(decoded.userId).select('-password');
+      } catch {
+        user = null;
+      }
+    }
+    if (!user) {
+      user = getMemoryUserById(decoded.userId);
+    }
 
     if (!user || !user.isActive) {
       return res.status(401).json({ success: false, message: 'User is not available' });
