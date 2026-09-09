@@ -20,6 +20,8 @@ if (process.env.MONGODB_URI) {
       try {
         const { seedInitialData } = await import('./utils/seedData.js');
         await seedInitialData();
+        const { migrateCategoriesAndProducts } = await import('./utils/migrateCategories.js');
+        await migrateCategoriesAndProducts();
       } catch (seedErr) {
         console.warn('[AI Studio] Database seed notice:', seedErr.message);
       }
@@ -27,6 +29,10 @@ if (process.env.MONGODB_URI) {
     .catch((error) => {
       console.warn('[AI Studio] Database initialization notice:', error.message);
     });
+} else {
+  import('./utils/migrateCategories.js')
+    .then(({ migrateCategoriesAndProducts }) => migrateCategoriesAndProducts())
+    .catch(() => {});
 }
 
 // Development: mount Vite middleware for seamless live SPA serving

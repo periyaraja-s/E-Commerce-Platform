@@ -3978,5 +3978,104 @@ body {
   }
 }
 
+/* Admin Management Table Styles */
+.btn-table-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-decoration: none;
+  background-color: #f1f5f9;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-table-action:hover {
+  background-color: #e2e8f0;
+  color: var(--text-primary);
+}
+
+.btn-table-action.btn-table-edit {
+  background-color: #eff6ff;
+  color: var(--accent-color);
+  border-color: #bfdbfe;
+}
+
+.btn-table-action.btn-table-edit:hover {
+  background-color: #dbeafe;
+  color: var(--accent-hover);
+}
+
+.btn-table-action.btn-table-delete {
+  background-color: #fef2f2;
+  color: var(--danger-color);
+  border-color: #fecaca;
+}
+
+.btn-table-action.btn-table-delete:hover {
+  background-color: #fee2e2;
+}
+
+.badge-low-stock {
+  background-color: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.admin-stats-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.admin-stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 16px 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.admin-stat-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.admin-stat-val {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.btn-card-manage-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background-color: #f1f5f9;
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-card-manage-action:hover {
+  background-color: #e2e8f0;
+}
+
+
 
 

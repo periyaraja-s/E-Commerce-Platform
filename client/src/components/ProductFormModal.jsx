@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api.js';
 
-export default function ProductFormModal({ isOpen, onClose, onSuccess, productToEdit, categories }) {
+export default function ProductFormModal({ isOpen, onClose, onSuccess, productToEdit, categories: initialCategories }) {
   const isEditing = Boolean(productToEdit);
 
+  const [categories, setCategories] = useState(initialCategories || []);
   const [formData, setFormData] = useState({
     name: '',
     category: '',
@@ -12,10 +13,24 @@ export default function ProductFormModal({ isOpen, onClose, onSuccess, productTo
     description: '',
     imageUrl: '',
     slug: '',
+    isActive: true,
   });
 
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Fetch categories from DB if not passed or empty
+  useEffect(() => {
+    if (isOpen && (!initialCategories || initialCategories.length === 0)) {
+      api.get('/categories')
+        .then((res) => {
+          if (res.data?.success) setCategories(res.data.data || []);
+        })
+        .catch((err) => console.error('Failed to load categories in modal:', err));
+    } else if (initialCategories) {
+      setCategories(initialCategories);
+    }
+  }, [isOpen, initialCategories]);
 
   useEffect(() => {
     if (productToEdit) {
@@ -27,6 +42,7 @@ export default function ProductFormModal({ isOpen, onClose, onSuccess, productTo
         description: productToEdit.description || '',
         imageUrl: Array.isArray(productToEdit.images) && productToEdit.images[0] ? productToEdit.images[0] : '',
         slug: productToEdit.slug || '',
+        isActive: typeof productToEdit.isActive === 'boolean' ? productToEdit.isActive : true,
       });
     } else {
       setFormData({
@@ -37,6 +53,7 @@ export default function ProductFormModal({ isOpen, onClose, onSuccess, productTo
         description: '',
         imageUrl: '',
         slug: '',
+        isActive: true,
       });
     }
     setErrorMsg('');
@@ -45,8 +62,11 @@ export default function ProductFormModal({ isOpen, onClose, onSuccess, productTo
   if (!isOpen) return null;
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -58,7 +78,7 @@ export default function ProductFormModal({ isOpen, onClose, onSuccess, productTo
       return;
     }
     if (!formData.category) {
-      setErrorMsg('Please select a category');
+      setErrorMsg('Please select a category from the database');
       return;
     }
     if (!formData.price || isNaN(Number(formData.price)) || Number(formData.price) < 0) {
@@ -81,6 +101,7 @@ export default function ProductFormModal({ isOpen, onClose, onSuccess, productTo
       stock: Math.floor(Number(formData.stock)),
       description: formData.description.trim(),
       images: formData.imageUrl.trim() ? [formData.imageUrl.trim()] : [],
+      isActive: Boolean(formData.isActive),
     };
 
     if (formData.slug.trim()) {
@@ -259,6 +280,20 @@ export default function ProductFormModal({ isOpen, onClose, onSuccess, productTo
                 onChange={handleChange}
                 required
               />
+            </div>
+
+            <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
+              <input
+                id="prod-is-active"
+                name="isActive"
+                type="checkbox"
+                checked={formData.isActive}
+                onChange={handleChange}
+                style={{ width: 18, height: 18, cursor: 'pointer' }}
+              />
+              <label htmlFor="prod-is-active" style={{ fontSize: '0.9rem', fontWeight: 500, cursor: 'pointer', margin: 0, color: 'var(--text-primary)' }}>
+                Product is Active and visible to customers
+              </label>
             </div>
           </div>
 

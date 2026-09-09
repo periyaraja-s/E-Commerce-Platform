@@ -49,19 +49,35 @@ export default function AppLayout() {
         </svg>
       ),
     },
-    {
-      to: '/cart',
-      label: 'Cart',
-      end: false,
-      badge: cartCount > 0 ? cartCount : null,
-      icon: (
-        <svg className="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <circle cx="9" cy="21" r="1" />
-          <circle cx="20" cy="21" r="1" />
-          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-        </svg>
-      ),
-    },
+    ...(isAdmin
+      ? [
+          {
+            to: '/categories',
+            label: 'Manage Categories',
+            end: false,
+            icon: (
+              <svg className="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                <line x1="7" y1="7" x2="7.01" y2="7" />
+              </svg>
+            ),
+          },
+        ]
+      : [
+          {
+            to: '/cart',
+            label: 'Cart',
+            end: false,
+            badge: cartCount > 0 ? cartCount : null,
+            icon: (
+              <svg className="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <circle cx="9" cy="21" r="1" />
+                <circle cx="20" cy="21" r="1" />
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+              </svg>
+            ),
+          },
+        ]),
     {
       to: '/orders',
       label: isAdmin ? 'Store Orders' : 'My Orders',
@@ -92,50 +108,52 @@ export default function AppLayout() {
           <span className="mobile-brand-title">E-Commerce Platform</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <NavLink
-            to="/cart"
-            style={{
-              position: 'relative',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 36,
-              height: 36,
-              borderRadius: 8,
-              border: '1px solid var(--border-color)',
-              color: 'var(--text-primary)',
-              textDecoration: 'none',
-            }}
-            aria-label="Shopping Cart"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="9" cy="21" r="1" />
-              <circle cx="20" cy="21" r="1" />
-              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-            </svg>
-            {cartCount > 0 && (
-              <span
-                style={{
-                  position: 'absolute',
-                  top: -4,
-                  right: -4,
-                  backgroundColor: '#2563eb',
-                  color: '#fff',
-                  fontSize: '0.7rem',
-                  fontWeight: 700,
-                  borderRadius: '9999px',
-                  minWidth: 18,
-                  height: 18,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '0 4px',
-                }}
-              >
-                {cartCount}
-              </span>
-            )}
-          </NavLink>
+          {!isAdmin && (
+            <NavLink
+              to="/cart"
+              style={{
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 36,
+                height: 36,
+                borderRadius: 8,
+                border: '1px solid var(--border-color)',
+                color: 'var(--text-primary)',
+                textDecoration: 'none',
+              }}
+              aria-label="Shopping Cart"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="9" cy="21" r="1" />
+                <circle cx="20" cy="21" r="1" />
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+              </svg>
+              {cartCount > 0 && (
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: -4,
+                    right: -4,
+                    backgroundColor: '#2563eb',
+                    color: '#fff',
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    borderRadius: '9999px',
+                    minWidth: 18,
+                    height: 18,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '0 4px',
+                  }}
+                >
+                  {cartCount}
+                </span>
+              )}
+            </NavLink>
+          )}
           <button
             type="button"
             className="mobile-toggle-btn"

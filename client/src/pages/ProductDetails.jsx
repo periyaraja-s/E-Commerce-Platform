@@ -54,7 +54,7 @@ export default function ProductDetails() {
   }, [isAdmin]);
 
   const handleAddToCart = async () => {
-    if (!product || product.stock <= 0) return;
+    if (isAdmin || !product || product.stock <= 0) return;
     const res = await addToCart(product, quantity);
     if (res?.success) {
       setAddedNotice(true);
@@ -174,128 +174,149 @@ export default function ProductDetails() {
 
           <p className="product-detail-desc">{product.description}</p>
 
-          {/* Purchasing Controls */}
-          <div className="product-detail-actions">
-            {!isOutOfStock && (
-              <div style={{ display: 'flex', alignItems: 'center', border: '1px solid var(--border-color)', borderRadius: 8, overflow: 'hidden' }}>
+          {/* Customer Purchasing Controls (Hidden from Admin) */}
+          {!isAdmin && (
+            <>
+              <div className="product-detail-actions">
+                {!isOutOfStock && (
+                  <div style={{ display: 'flex', alignItems: 'center', border: '1px solid var(--border-color)', borderRadius: 8, overflow: 'hidden' }}>
+                    <button
+                      type="button"
+                      style={{
+                        width: 38,
+                        height: 44,
+                        border: 'none',
+                        background: '#f8fafc',
+                        cursor: 'pointer',
+                        fontSize: '1.1rem',
+                        fontWeight: 600,
+                      }}
+                      onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                      disabled={quantity <= 1}
+                    >
+                      -
+                    </button>
+                    <div
+                      style={{
+                        width: 44,
+                        height: 44,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 600,
+                        fontSize: '0.95rem',
+                      }}
+                    >
+                      {quantity}
+                    </div>
+                    <button
+                      type="button"
+                      style={{
+                        width: 38,
+                        height: 44,
+                        border: 'none',
+                        background: '#f8fafc',
+                        cursor: 'pointer',
+                        fontSize: '1.1rem',
+                        fontWeight: 600,
+                      }}
+                      onClick={() => setQuantity((q) => Math.min(product.stock, q + 1))}
+                      disabled={quantity >= product.stock}
+                    >
+                      +
+                    </button>
+                  </div>
+                )}
+
                 <button
                   type="button"
-                  style={{
-                    width: 38,
-                    height: 44,
-                    border: 'none',
-                    background: '#f8fafc',
-                    cursor: 'pointer',
-                    fontSize: '1.1rem',
-                    fontWeight: 600,
-                  }}
-                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  disabled={quantity <= 1}
+                  className="btn-add-to-cart"
+                  disabled={isOutOfStock}
+                  onClick={handleAddToCart}
                 >
-                  -
-                </button>
-                <div
-                  style={{
-                    width: 44,
-                    height: 44,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: 600,
-                    fontSize: '0.95rem',
-                  }}
-                >
-                  {quantity}
-                </div>
-                <button
-                  type="button"
-                  style={{
-                    width: 38,
-                    height: 44,
-                    border: 'none',
-                    background: '#f8fafc',
-                    cursor: 'pointer',
-                    fontSize: '1.1rem',
-                    fontWeight: 600,
-                  }}
-                  onClick={() => setQuantity((q) => Math.min(product.stock, q + 1))}
-                  disabled={quantity >= product.stock}
-                >
-                  +
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="9" cy="21" r="1" />
+                    <circle cx="20" cy="21" r="1" />
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                  </svg>
+                  {isOutOfStock ? 'Out of Stock' : `Add ${quantity} to Cart`}
                 </button>
               </div>
-            )}
 
-            <button
-              type="button"
-              className="btn-add-to-cart"
-              disabled={isOutOfStock}
-              onClick={handleAddToCart}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="9" cy="21" r="1" />
-                <circle cx="20" cy="21" r="1" />
-                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-              </svg>
-              {isOutOfStock ? 'Out of Stock' : `Add ${quantity} to Cart`}
-            </button>
-          </div>
-
-          {addedNotice && (
-            <div
-              style={{
-                marginTop: 12,
-                padding: '8px 14px',
-                borderRadius: 8,
-                backgroundColor: '#ecfdf5',
-                color: '#065f46',
-                border: '1px solid #a7f3d0',
-                fontSize: '0.88rem',
-                fontWeight: 500,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="M20 6L9 17l-5-5" />
-              </svg>
-              Added {quantity} item(s) to your shopping cart!
-            </div>
+              {addedNotice && (
+                <div
+                  style={{
+                    marginTop: 12,
+                    padding: '8px 14px',
+                    borderRadius: 8,
+                    backgroundColor: '#ecfdf5',
+                    color: '#065f46',
+                    border: '1px solid #a7f3d0',
+                    fontSize: '0.88rem',
+                    fontWeight: 500,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8,
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M20 6L9 17l-5-5" />
+                  </svg>
+                  Added {quantity} item(s) to your shopping cart!
+                </div>
+              )}
+            </>
           )}
 
-          {/* Admin Management Section */}
+          {/* Admin Management Controls */}
           {isAdmin && (
             <div
               style={{
-                marginTop: 32,
-                paddingTop: 20,
-                borderTop: '1px dashed var(--border-color)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
+                marginTop: 24,
+                padding: '20px',
+                borderRadius: 10,
+                backgroundColor: '#f8fafc',
+                border: '1px solid var(--border-color)',
               }}
             >
-              <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                Admin Operations:
-              </span>
-              <button
-                type="button"
-                className="btn-card-action"
-                style={{ maxWidth: 120 }}
-                onClick={() => setIsEditModalOpen(true)}
-              >
-                Edit Product
-              </button>
-              <button
-                type="button"
-                className="btn-card-action btn-card-danger"
-                style={{ maxWidth: 120 }}
-                onClick={handleDelete}
-                disabled={isDeleting}
-              >
-                {isDeleting ? 'Deleting...' : 'Delete'}
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                <div>
+                  <h4 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>Admin Product Controls</h4>
+                  <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', marginTop: 2 }}>
+                    Update product details, stock levels, or delete this SKU.
+                  </p>
+                </div>
+                <span className={`badge-tag ${product.isActive ? 'badge-stock' : 'badge-out-of-stock'}`}>
+                  {product.isActive ? 'Status: Active' : 'Status: Inactive'}
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <button
+                  type="button"
+                  className="btn-card-action"
+                  style={{ minWidth: 140, padding: '10px 18px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                  onClick={() => setIsEditModalOpen(true)}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                  Edit Product
+                </button>
+                <button
+                  type="button"
+                  className="btn-card-action btn-delete-alt"
+                  style={{ minWidth: 140, padding: '10px 18px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                  disabled={isDeleting}
+                  onClick={handleDelete}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  </svg>
+                  {isDeleting ? 'Deleting...' : 'Delete Product'}
+                </button>
+              </div>
             </div>
           )}
         </div>

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { protect } from '../middleware/auth.js';
+import { authorize, protect } from '../middleware/auth.js';
 import {
   getCart,
   addToCart,
@@ -11,8 +11,8 @@ import {
 
 const router = Router();
 
-// All cart operations require authentication and customer/admin access to their own cart
-router.use(protect);
+// All cart operations require authentication and customer role
+router.use(protect, authorize('customer'));
 
 router.get('/', getCart);
 router.post('/items', addToCart);

@@ -25,6 +25,28 @@ export default function Cart() {
   const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
 
+  // Admin access guard
+  if (user?.role === 'admin') {
+    return (
+      <div className="cart-page-container">
+        <div className="products-empty-state" style={{ marginTop: 40 }}>
+          <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#eff6ff', color: 'var(--accent-color)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+          </div>
+          <h3 className="empty-state-title">Admin Role Restriction</h3>
+          <p className="empty-state-desc">
+            Administrator accounts are restricted from consumer shopping carts and checkout operations. Please utilize the inventory management table and admin dashboard to manage products and store orders.
+          </p>
+          <Link to="/products" className="btn-empty-reset" style={{ textDecoration: 'none', display: 'inline-block', marginTop: 12 }}>
+            Manage Inventory Table &rarr;
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   const handlePlaceOrder = () => {
     setOrderPlaced(true);
     setTimeout(async () => {

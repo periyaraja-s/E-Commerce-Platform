@@ -10,6 +10,7 @@ export default function ProductCard({ product, onQuickView }) {
 
   const [justAdded, setJustAdded] = useState(false);
 
+  const isAdmin = user?.role === 'admin';
   const isOutOfStock = Number(product.stock) <= 0;
   const isLowStock = !isOutOfStock && Number(product.stock) <= 10;
   const categoryName = product.category?.name || 'General';
@@ -21,8 +22,7 @@ export default function ProductCard({ product, onQuickView }) {
 
   const handleAddToCart = async (e) => {
     e.stopPropagation();
-
-    if (isOutOfStock) return;
+    if (isAdmin || isOutOfStock) return;
 
     const res = await addToCart(product, 1);
     if (res?.success) {
@@ -100,39 +100,57 @@ export default function ProductCard({ product, onQuickView }) {
             </span>
           </div>
 
-          <button
-            type="button"
-            className={`btn-card-add-cart ${justAdded ? 'added' : ''} ${isOutOfStock ? 'disabled' : ''}`}
-            disabled={isOutOfStock}
-            onClick={handleAddToCart}
-            title={
-              isOutOfStock
-                ? 'Product is currently out of stock'
-                : user
-                ? 'Add to Cart'
-                : 'Sign in to add to cart'
-            }
-          >
-            {isOutOfStock ? (
-              <span>Out of Stock</span>
-            ) : justAdded ? (
-              <>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-                <span>Added!</span>
-              </>
-            ) : (
-              <>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                  <circle cx="9" cy="21" r="1" />
-                  <circle cx="20" cy="21" r="1" />
-                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-                </svg>
-                <span>Add to Cart</span>
-              </>
-            )}
-          </button>
+          {isAdmin ? (
+            <button
+              type="button"
+              className="btn-card-manage-action"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/products/${product._id || product.id}`);
+              }}
+              title="Manage product specification and inventory"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+              </svg>
+              <span>Manage</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              className={`btn-card-add-cart ${justAdded ? 'added' : ''} ${isOutOfStock ? 'disabled' : ''}`}
+              disabled={isOutOfStock}
+              onClick={handleAddToCart}
+              title={
+                isOutOfStock
+                  ? 'Product is currently out of stock'
+                  : user
+                  ? 'Add to Cart'
+                  : 'Sign in to add to cart'
+              }
+            >
+              {isOutOfStock ? (
+                <span>Out of Stock</span>
+              ) : justAdded ? (
+                <>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span>Added!</span>
+                </>
+              ) : (
+                <>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                    <circle cx="9" cy="21" r="1" />
+                    <circle cx="20" cy="21" r="1" />
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                  </svg>
+                  <span>Add to Cart</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
       </div>
     </div>

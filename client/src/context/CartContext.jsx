@@ -23,6 +23,12 @@ export function CartProvider({ children }) {
 
   // Fetch cart from backend or local fallback
   const fetchCart = useCallback(async () => {
+    if (user?.role === 'admin') {
+      setItems([]);
+      setLoading(false);
+      return;
+    }
+
     if (!userId) {
       // Guest mode: load from localStorage
       try {
@@ -110,6 +116,10 @@ export function CartProvider({ children }) {
    * Add a product to the cart with server stock validation
    */
   const addToCart = async (product, quantity = 1) => {
+    if (user?.role === 'admin') {
+      showToast('Admin accounts do not support customer shopping cart actions.', 'error');
+      return { success: false, message: 'Admin accounts cannot add to cart' };
+    }
     if (!product) return { success: false };
     const productId = product._id || product.id;
     const requestedQty = Math.max(1, Number(quantity) || 1);

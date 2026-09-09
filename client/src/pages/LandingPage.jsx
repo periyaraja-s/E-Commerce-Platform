@@ -124,7 +124,7 @@ export default function LandingPage() {
             <polyline points="20 6 9 17 4 12" />
           </svg>
           <span>{toast.message}</span>
-          {user && (
+          {user && !isAdmin && (
             <Link to="/cart" className="toast-action-link">
               View Cart &rarr;
             </Link>
@@ -164,26 +164,47 @@ export default function LandingPage() {
             <button type="button" className="nav-anchor-btn" onClick={scrollToProducts}>
               Products
             </button>
-            <a href="#categories" className="nav-anchor-btn" onClick={() => setMobileMenuOpen(false)}>
-              Categories
-            </a>
-            <a href="#benefits" className="nav-anchor-btn" onClick={() => setMobileMenuOpen(false)}>
-              Why Us
-            </a>
+            <Link to="/about" className="nav-anchor-btn" style={{ textDecoration: 'none' }}>
+              About
+            </Link>
+            <Link to="/terms" className="nav-anchor-btn" style={{ textDecoration: 'none' }}>
+              Terms
+            </Link>
+            <Link to="/returns" className="nav-anchor-btn" style={{ textDecoration: 'none' }}>
+              Returns
+            </Link>
           </nav>
 
           {/* Desktop Right Actions (Auth / Account & Cart) */}
           <div className="landing-nav-actions">
-            {/* Shopping Cart Button */}
-            <Link to="/cart" className="landing-nav-cart-btn" title="View Shopping Cart">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                <circle cx="9" cy="21" r="1" />
-                <circle cx="20" cy="21" r="1" />
-                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-              </svg>
-              <span className="nav-cart-label">Cart</span>
-              {cartCount > 0 && <span className="nav-cart-badge">{cartCount}</span>}
-            </Link>
+            {/* Shopping Cart Button - Hidden for Admins */}
+            {!isAdmin && (
+              <Link to="/cart" className="landing-nav-cart-btn" title="View Shopping Cart">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <circle cx="9" cy="21" r="1" />
+                  <circle cx="20" cy="21" r="1" />
+                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                </svg>
+                <span className="nav-cart-label">Cart</span>
+                {cartCount > 0 && <span className="nav-cart-badge">{cartCount}</span>}
+              </Link>
+            )}
+
+            {isAdmin && (
+              <Link
+                to="/products"
+                className="btn-card-action"
+                style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                  <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                  <rect x="14" y="14" width="7" height="7" rx="1.5" />
+                  <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                </svg>
+                Manage Inventory
+              </Link>
+            )}
 
             {user ? (
               // Logged-in State: Show User Account info & Controls
@@ -324,18 +345,20 @@ export default function LandingPage() {
                     </div>
                   </div>
 
-                  <Link
-                    to="/cart"
-                    className="mobile-action-btn"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="9" cy="21" r="1" />
-                      <circle cx="20" cy="21" r="1" />
-                      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-                    </svg>
-                    <span>View Shopping Cart ({cartCount})</span>
-                  </Link>
+                  {!isAdmin && (
+                    <Link
+                      to="/cart"
+                      className="mobile-action-btn"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="9" cy="21" r="1" />
+                        <circle cx="20" cy="21" r="1" />
+                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                      </svg>
+                      <span>View Shopping Cart ({cartCount})</span>
+                    </Link>
+                  )}
 
                   <Link
                     to="/dashboard"
@@ -819,7 +842,11 @@ export default function LandingPage() {
             </p>
           </div>
           <div className="promo-cta-col">
-            {user ? (
+            {isAdmin ? (
+              <Link to="/products" className="btn-promo-cta">
+                Manage Inventory Table &rarr;
+              </Link>
+            ) : user ? (
               <Link to="/cart" className="btn-promo-cta">
                 View Shopping Cart ({cartCount})
               </Link>
@@ -874,12 +901,12 @@ export default function LandingPage() {
               </li>
               <li>
                 <button type="button" onClick={() => handleSelectCategoryPill('apparel-fashion')}>
-                  Apparel & Fashion
+                  Apparel &amp; Fashion
                 </button>
               </li>
               <li>
                 <button type="button" onClick={() => handleSelectCategoryPill('home-living')}>
-                  Home & Living
+                  Home &amp; Living
                 </button>
               </li>
             </ul>
@@ -887,19 +914,26 @@ export default function LandingPage() {
 
           {/* Col 3: Customer Portal */}
           <div className="footer-col">
-            <h4 className="footer-heading">Account & Orders</h4>
+            <h4 className="footer-heading">Account &amp; Orders</h4>
             <ul className="footer-links-list">
               {user ? (
                 <>
                   <li>
-                    <Link to="/dashboard">My Dashboard</Link>
+                    <Link to="/dashboard">{isAdmin ? 'Admin Dashboard' : 'My Dashboard'}</Link>
                   </li>
                   <li>
-                    <Link to="/orders">Order History</Link>
+                    <Link to="/orders">{isAdmin ? 'Store Orders' : 'Order History'}</Link>
                   </li>
-                  <li>
-                    <Link to="/cart">Cart ({cartCount})</Link>
-                  </li>
+                  {!isAdmin && (
+                    <li>
+                      <Link to="/cart">Cart ({cartCount})</Link>
+                    </li>
+                  )}
+                  {isAdmin && (
+                    <li>
+                      <Link to="/categories">Manage Categories</Link>
+                    </li>
+                  )}
                   <li>
                     <button type="button" onClick={logout}>
                       Sign Out
@@ -927,16 +961,16 @@ export default function LandingPage() {
             <h4 className="footer-heading">Customer Care</h4>
             <ul className="footer-links-list">
               <li>
-                <a href="#benefits">Fast 2-3 Day Shipping</a>
+                <Link to="/about">About Us</Link>
               </li>
               <li>
-                <a href="#benefits">30-Day Easy Returns</a>
+                <Link to="/terms">Terms of Service</Link>
               </li>
               <li>
-                <a href="#benefits">Privacy Policy</a>
+                <Link to="/returns">Return &amp; Refund Policy</Link>
               </li>
               <li>
-                <a href="#benefits">Terms of Service</a>
+                <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Fast 2-3 Day Shipping</span>
               </li>
             </ul>
           </div>

@@ -175,6 +175,14 @@ export async function createProduct(req, res) {
   if (!finalSlug) finalSlug = 'product-' + Date.now().toString(36);
 
   if (mongoose.connection.readyState === 1) {
+    if (!mongoose.isValidObjectId(category)) {
+      return res.status(422).json({ success: false, message: 'Valid category ID from database is required' });
+    }
+    const catDoc = await Category.findById(category);
+    if (!catDoc) {
+      return res.status(422).json({ success: false, message: 'Selected category does not exist in the database' });
+    }
+
     // Check if slug is unique, append unique suffix if needed
     const existing = await Product.findOne({ slug: finalSlug });
     if (existing) {
@@ -230,7 +238,16 @@ export async function updateProduct(req, res) {
     if (description?.trim()) product.description = description.trim();
     if (price !== undefined) product.price = Number(price);
     if (stock !== undefined) product.stock = Math.max(0, Math.floor(Number(stock)));
-    if (category) product.category = category;
+    if (category) {
+      if (!mongoose.isValidObjectId(category)) {
+        return res.status(422).json({ success: false, message: 'Valid category ID from database is required' });
+      }
+      const catDoc = await Category.findById(category);
+      if (!catDoc) {
+        return res.status(422).json({ success: false, message: 'Selected category does not exist in the database' });
+      }
+      product.category = category;
+    }
     if (Array.isArray(images)) product.images = images.filter(Boolean);
     if (typeof isActive === 'boolean') product.isActive = isActive;
     if (slug?.trim()) {
