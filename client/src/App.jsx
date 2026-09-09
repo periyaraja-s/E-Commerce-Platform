@@ -13,7 +13,9 @@ import Products from './pages/Products.jsx';
 import ProductDetails from './pages/ProductDetails.jsx';
 import Categories from './pages/Categories.jsx';
 import Cart from './pages/Cart.jsx';
+import Checkout from './pages/Checkout.jsx';
 import Orders from './pages/Orders.jsx';
+import OrderConfirmation from './pages/OrderConfirmation.jsx';
 import About from './pages/About.jsx';
 import Terms from './pages/Terms.jsx';
 import Returns from './pages/Returns.jsx';
@@ -43,7 +45,10 @@ function AppRoutes() {
           <Route path="/products/:id" element={<ProductDetails />} />
           <Route path="/categories" element={<Categories />} />
           <Route path="/cart" element={<Cart />} />
+          <Route path="/checkout" element={<Checkout />} />
           <Route path="/orders" element={<Orders />} />
+          <Route path="/orders/:id" element={<OrderConfirmation />} />
+          <Route path="/order-confirmation/:id" element={<OrderConfirmation />} />
         </Route>
       </Route>
 

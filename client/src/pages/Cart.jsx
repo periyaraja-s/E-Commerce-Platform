@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 
 export default function Cart() {
+  const navigate = useNavigate();
   const {
     items,
     loading,
@@ -22,8 +23,6 @@ export default function Cart() {
   } = useCart();
 
   const { user } = useAuth();
-  const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
-  const [orderPlaced, setOrderPlaced] = useState(false);
 
   // Admin access guard
   if (user?.role === 'admin') {
@@ -46,15 +45,6 @@ export default function Cart() {
       </div>
     );
   }
-
-  const handlePlaceOrder = () => {
-    setOrderPlaced(true);
-    setTimeout(async () => {
-      await clearCart();
-      setCheckoutModalOpen(false);
-      setOrderPlaced(false);
-    }, 2200);
-  };
 
   return (
     <div className="cart-page-container">
@@ -316,7 +306,7 @@ export default function Cart() {
               <button
                 type="button"
                 className="btn-checkout-primary"
-                onClick={() => setCheckoutModalOpen(true)}
+                onClick={() => navigate('/checkout')}
                 disabled={actionLoading || items.length === 0}
               >
                 Proceed to Checkout &rarr;
@@ -338,69 +328,6 @@ export default function Cart() {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Checkout Modal */}
-      {checkoutModalOpen && (
-        <div className="quickview-modal-backdrop" onClick={() => !orderPlaced && setCheckoutModalOpen(false)}>
-          <div className="checkout-modal-content" onClick={(e) => e.stopPropagation()}>
-            {orderPlaced ? (
-              <div className="order-success-pane">
-                <div className="success-icon-box">
-                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                </div>
-                <h2>Order Placed Successfully!</h2>
-                <p>Thank you for your purchase. A confirmation email with tracking has been sent.</p>
-                <div className="success-spinner-note">Finalizing order details...</div>
-              </div>
-            ) : (
-              <div>
-                <div className="checkout-modal-header">
-                  <h2>Confirm Order</h2>
-                  <button type="button" onClick={() => setCheckoutModalOpen(false)} className="close-btn">
-                    &times;
-                  </button>
-                </div>
-
-                <div className="checkout-summary-breakdown">
-                  <p>You are about to place an order for <strong>{cartCount} items</strong>:</p>
-                  <div className="checkout-items-preview">
-                    {items.map(({ product, quantity }) => (
-                      <div key={product._id || product.id} className="preview-line">
-                        <span>{quantity}x {product.name}</span>
-                        <span>${((Number(product.price) || 0) * quantity).toFixed(2)}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="checkout-final-total">
-                    <span>Total Amount:</span>
-                    <strong>${grandTotal.toFixed(2)}</strong>
-                  </div>
-                </div>
-
-                <div className="checkout-modal-actions">
-                  <button
-                    type="button"
-                    className="btn-modal-cancel"
-                    onClick={() => setCheckoutModalOpen(false)}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-modal-confirm"
-                    onClick={handlePlaceOrder}
-                  >
-                    Confirm &amp; Place Order (${grandTotal.toFixed(2)})
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       )}
