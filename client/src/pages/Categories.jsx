@@ -148,34 +148,32 @@ export default function Categories() {
   };
 
   return (
-    <div className="categories-page-container" style={{ padding: '0 0 40px 0' }}>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
       {/* Header */}
-      <div className="page-header-block">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-          <div>
-            <h1 className="page-title">Category Management</h1>
-            <p className="page-subtitle">
-              Manage database product categories, view associated product volume, and configure catalog taxonomies.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            className="btn-add-product-primary"
-            onClick={handleOpenAddModal}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            <span>Add New Category</span>
-          </button>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Category Management</h1>
+          <p className="text-sm text-slate-500 mt-1 max-w-2xl">
+            Manage database product categories, view associated product volume, and configure catalog taxonomies.
+          </p>
         </div>
+
+        <button
+          type="button"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-sm shadow-xs transition-colors cursor-pointer self-start sm:self-auto"
+          onClick={handleOpenAddModal}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          <span>Add New Category</span>
+        </button>
       </div>
 
       {/* Notifications */}
       {successMsg && (
-        <div className="global-toast-notification success" style={{ position: 'static', marginTop: 16, marginBottom: 16, width: '100%' }}>
+        <div className="mt-4 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-medium flex items-center gap-2 shadow-xs">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <polyline points="20 6 9 17 4 12" />
           </svg>
@@ -184,22 +182,36 @@ export default function Categories() {
       )}
 
       {errorMsg && (
-        <div className="catalog-error-banner" style={{ marginTop: 16, marginBottom: 16 }}>
+        <div className="mt-4 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm font-medium flex items-center justify-between gap-2 shadow-xs">
           <span>{errorMsg}</span>
-          <button type="button" onClick={fetchCategories} className="catalog-retry-btn">Retry</button>
+          <button
+            type="button"
+            onClick={fetchCategories}
+            className="px-3 py-1 bg-rose-100 hover:bg-rose-200 text-rose-900 rounded-lg text-xs font-semibold cursor-pointer transition-colors"
+          >
+            Retry
+          </button>
         </div>
       )}
 
       {/* Filter toolbar */}
-      <div className="products-filter-toolbar" style={{ marginTop: 20, marginBottom: 20 }}>
-        <div className="filter-search-box" style={{ maxWidth: 360 }}>
-          <svg className="search-icon-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <div className="mt-6 mb-6">
+        <div className="relative max-w-sm">
+          <svg
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
           <input
             type="text"
-            className="filter-search-input"
+            className="w-full pl-10 pr-9 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white placeholder-slate-400 transition-colors shadow-xs"
             placeholder="Search categories by name or slug..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -207,7 +219,7 @@ export default function Categories() {
           {search && (
             <button
               type="button"
-              className="search-clear-btn"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 font-bold text-sm cursor-pointer"
               onClick={() => setSearch('')}
               aria-label="Clear search"
             >
@@ -218,135 +230,146 @@ export default function Categories() {
       </div>
 
       {/* Category Management Table */}
-      <div className="products-table-card">
-        <table className="products-table" aria-label="Admin Categories Table">
-          <thead>
-            <tr>
-              <th style={{ minWidth: 200 }}>Category Name</th>
-              <th style={{ minWidth: 160 }}>URL Slug</th>
-              <th style={{ minWidth: 260 }}>Description</th>
-              <th style={{ minWidth: 120 }}>Linked Products</th>
-              <th style={{ minWidth: 120 }}>Status</th>
-              <th style={{ minWidth: 140, textAlign: 'right' }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              [1, 2, 3, 4].map((i) => (
-                <tr key={i}>
-                  <td colSpan={6} style={{ padding: '16px' }}>
-                    <div style={{ height: 20, background: '#e2e8f0', borderRadius: 4, width: `${50 + i * 10}%` }} />
-                  </td>
-                </tr>
-              ))
-            ) : filteredCategories.length === 0 ? (
-              <tr>
-                <td colSpan={6} style={{ textAlign: 'center', padding: '40px 16px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>No categories found</span>
-                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                      Try adjusting your search or add a new category.
-                    </span>
-                  </div>
-                </td>
+      <div className="w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse text-sm" aria-label="Admin Categories Table">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                <th className="px-6 py-3.5 min-w-[200px]">Category Name</th>
+                <th className="px-6 py-3.5 min-w-[160px]">URL Slug</th>
+                <th className="px-6 py-3.5 min-w-[260px]">Description</th>
+                <th className="px-6 py-3.5 min-w-[130px]">Linked Products</th>
+                <th className="px-6 py-3.5 min-w-[120px]">Status</th>
+                <th className="px-6 py-3.5 min-w-[150px] text-right">Actions</th>
               </tr>
-            ) : (
-              filteredCategories.map((cat) => {
-                const isActive = cat.isActive !== false;
-                const count = cat.productCount || 0;
-
-                return (
-                  <tr key={cat._id}>
-                    <td>
-                      <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.92rem' }}>
-                        {cat.name}
-                      </div>
-                    </td>
-                    <td>
-                      <code style={{ fontSize: '0.82rem', background: '#f1f5f9', padding: '3px 6px', borderRadius: 4, color: '#475569' }}>
-                        {cat.slug}
-                      </code>
-                    </td>
-                    <td>
-                      <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                        {cat.description || 'No description provided.'}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={`badge-tag ${count > 0 ? 'badge-category' : 'badge-low-stock'}`} style={{ fontSize: '0.8rem' }}>
-                        {count} {count === 1 ? 'product' : 'products'}
-                      </span>
-                    </td>
-                    <td>
-                      <button
-                        type="button"
-                        onClick={() => handleToggleStatus(cat)}
-                        title="Click to toggle status"
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                      >
-                        <span
-                          className={`badge-tag ${isActive ? 'badge-stock' : 'badge-out-of-stock'}`}
-                          style={{ fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: 5 }}
-                        >
-                          <span
-                            style={{
-                              width: 6,
-                              height: 6,
-                              borderRadius: '50%',
-                              backgroundColor: isActive ? '#10b981' : '#ef4444',
-                            }}
-                          />
-                          {isActive ? 'Active' : 'Inactive'}
-                        </span>
-                      </button>
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }}>
-                        <button
-                          type="button"
-                          className="btn-table-action btn-table-edit"
-                          onClick={() => handleOpenEditModal(cat)}
-                          title="Edit Category"
-                        >
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                          </svg>
-                          <span>Edit</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          className="btn-table-action btn-table-delete"
-                          onClick={() => handleDeleteCategory(cat)}
-                          disabled={deletingId === cat._id}
-                          title={count > 0 ? 'Reassign products before deleting' : 'Delete Category'}
-                        >
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                            <polyline points="3 6 5 6 21 6" />
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                          </svg>
-                          <span>{deletingId === cat._id ? '...' : 'Delete'}</span>
-                        </button>
-                      </div>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {loading ? (
+                [1, 2, 3, 4].map((i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td colSpan={6} className="px-6 py-4">
+                      <div className="h-4 bg-slate-200 rounded w-1/3" />
                     </td>
                   </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+                ))
+              ) : filteredCategories.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-12 px-6">
+                    <div className="flex flex-col items-center gap-2 max-w-sm mx-auto">
+                      <span className="font-bold text-slate-900 text-base">No categories found</span>
+                      <span className="text-xs text-slate-500">
+                        Try adjusting your search or add a new category.
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                filteredCategories.map((cat) => {
+                  const isActive = cat.isActive !== false;
+                  const count = cat.productCount || 0;
+
+                  return (
+                    <tr key={cat._id} className="hover:bg-slate-50/70 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="font-semibold text-slate-900 text-sm">
+                          {cat.name}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <code className="text-xs font-mono bg-slate-100 text-slate-700 px-2 py-1 rounded-md">
+                          {cat.slug}
+                        </code>
+                      </td>
+                      <td className="px-6 py-4 max-w-xs">
+                        <span className="text-xs text-slate-600 line-clamp-2">
+                          {cat.description || 'No description provided.'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`px-2.5 py-1 rounded-md text-xs font-semibold ${
+                            count > 0 ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-600'
+                          }`}
+                        >
+                          {count} {count === 1 ? 'product' : 'products'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleStatus(cat)}
+                          title="Click to toggle status"
+                          className="bg-transparent border-0 p-0 cursor-pointer inline-flex items-center"
+                        >
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${
+                              isActive
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                : 'bg-slate-100 text-slate-600 border-slate-200'
+                            }`}
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                isActive ? 'bg-emerald-500' : 'bg-slate-400'
+                              }`}
+                            />
+                            {isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </button>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            className="px-2.5 py-1.5 rounded-lg border border-blue-200 bg-blue-50/50 text-blue-700 hover:bg-blue-100 text-xs font-medium inline-flex items-center gap-1 cursor-pointer transition-colors"
+                            onClick={() => handleOpenEditModal(cat)}
+                            title="Edit Category"
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                            </svg>
+                            <span>Edit</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            className="px-2.5 py-1.5 rounded-lg border border-rose-200 bg-rose-50/50 text-rose-700 hover:bg-rose-100 text-xs font-medium inline-flex items-center gap-1 cursor-pointer transition-colors disabled:opacity-50"
+                            onClick={() => handleDeleteCategory(cat)}
+                            disabled={deletingId === cat._id}
+                            title={count > 0 ? 'Reassign products before deleting' : 'Delete Category'}
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                              <polyline points="3 6 5 6 21 6" />
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                            </svg>
+                            <span>{deletingId === cat._id ? '...' : 'Delete'}</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Category Create/Edit Modal */}
       {isModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
-          <div className="modal-dialog" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 500 }}>
-            <div className="modal-header">
-              <h2 className="modal-title">{editingCategory ? 'Edit Category' : 'Add New Category'}</h2>
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 overflow-y-auto" onClick={() => setIsModalOpen(false)}>
+          <div
+            className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col my-auto"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+          >
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 shrink-0">
+              <h2 className="text-lg font-bold text-slate-900">{editingCategory ? 'Edit Category' : 'Add New Category'}</h2>
               <button
                 type="button"
-                className="modal-close-btn"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors cursor-pointer text-base leading-none"
                 onClick={() => setIsModalOpen(false)}
                 aria-label="Close modal"
               >
@@ -354,18 +377,22 @@ export default function Categories() {
               </button>
             </div>
 
-            <form onSubmit={handleModalSubmit}>
-              <div className="modal-body">
-                {modalError && <div className="form-error-banner">{modalError}</div>}
+            <form onSubmit={handleModalSubmit} className="flex flex-col">
+              <div className="p-6 space-y-4">
+                {modalError && (
+                  <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+                    {modalError}
+                  </div>
+                )}
 
-                <div className="form-group">
-                  <label className="form-label" htmlFor="cat-name">
-                    Category Name <span className="req">*</span>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5" htmlFor="cat-name">
+                    Category Name <span className="text-rose-500">*</span>
                   </label>
                   <input
                     id="cat-name"
                     type="text"
-                    className="form-control"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors"
                     placeholder="e.g. Smart Watches"
                     value={modalFormData.name}
                     onChange={(e) => setModalFormData((prev) => ({ ...prev, name: e.target.value }))}
@@ -373,13 +400,13 @@ export default function Categories() {
                   />
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label" htmlFor="cat-desc">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5" htmlFor="cat-desc">
                     Description
                   </label>
                   <textarea
                     id="cat-desc"
-                    className="form-control"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors resize-y"
                     rows="3"
                     placeholder="Brief description for customer catalog browsing and SEO..."
                     value={modalFormData.description}
@@ -387,35 +414,33 @@ export default function Categories() {
                   />
                 </div>
 
-                <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
+                <div className="flex items-center gap-2.5 pt-1">
                   <input
                     id="cat-active"
                     type="checkbox"
                     checked={modalFormData.isActive}
                     onChange={(e) => setModalFormData((prev) => ({ ...prev, isActive: e.target.checked }))}
-                    style={{ width: 18, height: 18, cursor: 'pointer' }}
+                    className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer"
                   />
-                  <label htmlFor="cat-active" style={{ fontSize: '0.9rem', fontWeight: 500, cursor: 'pointer', margin: 0, color: 'var(--text-primary)' }}>
+                  <label htmlFor="cat-active" className="text-xs font-medium text-slate-700 cursor-pointer select-none">
                     Active and visible in store category filters
                   </label>
                 </div>
               </div>
 
-              <div className="modal-footer">
+              <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-200 bg-slate-50 shrink-0">
                 <button
                   type="button"
-                  className="btn-card-action"
+                  className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 text-xs font-semibold cursor-pointer transition-colors"
                   onClick={() => setIsModalOpen(false)}
                   disabled={submitting}
-                  style={{ maxWidth: 100 }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="btn-card-action btn-card-primary"
+                  className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-semibold cursor-pointer transition-colors shadow-xs disabled:opacity-50"
                   disabled={submitting}
-                  style={{ maxWidth: 160 }}
                 >
                   {submitting ? 'Saving...' : editingCategory ? 'Update Category' : 'Create Category'}
                 </button>

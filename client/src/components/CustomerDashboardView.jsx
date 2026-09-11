@@ -40,32 +40,38 @@ export default function CustomerDashboardView({ user }) {
   };
 
   return (
-    <div>
+    <div className="space-y-8">
       {/* Top Banner */}
-      <div className="dashboard-top-banner">
-        <div className="dashboard-banner-info">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-            <h1 className="dashboard-banner-title">Welcome back, {user?.name || 'Customer'}!</h1>
-            <span className="role-badge-chip role-badge-customer">
+      <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Welcome back, {user?.name || 'Customer'}!</h1>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-100">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
               Customer Account
             </span>
           </div>
-          <p className="dashboard-banner-subtitle">
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
             Track your order deliveries, manage shopping cart, and explore catalog deals.
           </p>
         </div>
-        <div className="dashboard-quick-actions">
-          <Link to="/products" className="btn-quick-action primary">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <Link
+            to="/products"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-semibold shadow-xs transition-colors no-underline"
+          >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
               <line x1="3" y1="6" x2="21" y2="6" />
             </svg>
             <span>Browse Products</span>
           </Link>
-          <Link to="/cart" className="btn-quick-action">
+          <Link
+            to="/cart"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 text-xs font-semibold shadow-xs transition-colors no-underline"
+          >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="9" cy="21" r="1" />
               <circle cx="20" cy="21" r="1" />
@@ -73,7 +79,12 @@ export default function CustomerDashboardView({ user }) {
             </svg>
             <span>Go to Cart</span>
           </Link>
-          <button type="button" onClick={fetchMetrics} className="btn-quick-action" title="Refresh metrics">
+          <button
+            type="button"
+            onClick={fetchMetrics}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+            title="Refresh metrics"
+          >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="23 4 23 10 17 10" />
               <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
@@ -84,72 +95,80 @@ export default function CustomerDashboardView({ user }) {
       </div>
 
       {error && (
-        <div className="form-error-banner" style={{ marginBottom: 20 }}>
+        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs sm:text-sm font-medium">
           {error}
         </div>
       )}
 
-      {/* Metrics Cards Grid (Total orders, Pending orders, Completed orders, Cart items) */}
-      <div className="metrics-grid-customer">
+      {/* Metrics Cards Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {/* Total Orders */}
-        <div className="metric-stat-card">
-          <div className="metric-icon-box metric-icon-blue">
+        <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs flex items-start gap-4 transition-all hover:border-slate-300">
+          <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
               <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
               <line x1="12" y1="22.08" x2="12" y2="12" />
             </svg>
           </div>
-          <div className="metric-stat-info">
-            <span className="metric-stat-label">Total Orders</span>
-            <span className="metric-stat-number">{loading ? '—' : data?.totalOrders ?? 0}</span>
-            <span className="metric-stat-desc">Lifetime purchases</span>
+          <div className="flex-1 min-w-0">
+            <span className="block text-xs font-semibold text-slate-500">Total Orders</span>
+            <span className="block text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight my-0.5">
+              {loading ? '—' : data?.totalOrders ?? 0}
+            </span>
+            <span className="block text-xs text-slate-400">Lifetime purchases</span>
           </div>
         </div>
 
         {/* Pending Orders */}
-        <div className="metric-stat-card">
-          <div className="metric-icon-box metric-icon-amber">
+        <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs flex items-start gap-4 transition-all hover:border-slate-300">
+          <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="10" />
               <polyline points="12 6 12 12 16 14" />
             </svg>
           </div>
-          <div className="metric-stat-info">
-            <span className="metric-stat-label">Pending Orders</span>
-            <span className="metric-stat-number">{loading ? '—' : data?.pendingOrders ?? 0}</span>
-            <span className="metric-stat-desc">In fulfillment</span>
+          <div className="flex-1 min-w-0">
+            <span className="block text-xs font-semibold text-slate-500">Pending Orders</span>
+            <span className="block text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight my-0.5">
+              {loading ? '—' : data?.pendingOrders ?? 0}
+            </span>
+            <span className="block text-xs text-slate-400">In fulfillment</span>
           </div>
         </div>
 
         {/* Completed Orders */}
-        <div className="metric-stat-card">
-          <div className="metric-icon-box metric-icon-emerald">
+        <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs flex items-start gap-4 transition-all hover:border-slate-300">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
               <polyline points="22 4 12 14.01 9 11.01" />
             </svg>
           </div>
-          <div className="metric-stat-info">
-            <span className="metric-stat-label">Completed Orders</span>
-            <span className="metric-stat-number">{loading ? '—' : data?.completedOrders ?? 0}</span>
-            <span className="metric-stat-desc">Delivered safely</span>
+          <div className="flex-1 min-w-0">
+            <span className="block text-xs font-semibold text-slate-500">Completed Orders</span>
+            <span className="block text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight my-0.5">
+              {loading ? '—' : data?.completedOrders ?? 0}
+            </span>
+            <span className="block text-xs text-slate-400">Delivered safely</span>
           </div>
         </div>
 
         {/* Cart Items */}
-        <div className="metric-stat-card">
-          <div className="metric-icon-box metric-icon-purple">
+        <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs flex items-start gap-4 transition-all hover:border-slate-300">
+          <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="9" cy="21" r="1" />
               <circle cx="20" cy="21" r="1" />
               <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
             </svg>
           </div>
-          <div className="metric-stat-info">
-            <span className="metric-stat-label">Cart Items</span>
-            <span className="metric-stat-number">{loading ? '—' : data?.cartItems ?? 0}</span>
-            <Link to="/cart" style={{ fontSize: '0.78rem', color: '#7c3aed', fontWeight: 600, textDecoration: 'none' }}>
+          <div className="flex-1 min-w-0">
+            <span className="block text-xs font-semibold text-slate-500">Cart Items</span>
+            <span className="block text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight my-0.5">
+              {loading ? '—' : data?.cartItems ?? 0}
+            </span>
+            <Link to="/cart" className="text-xs font-semibold text-purple-600 hover:text-purple-800 transition-colors no-underline">
               View Cart &rarr;
             </Link>
           </div>
@@ -157,86 +176,102 @@ export default function CustomerDashboardView({ user }) {
       </div>
 
       {/* Recent Orders Section */}
-      <div className="dashboard-section-card">
-        <div className="section-card-header">
+      <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-6 border-b border-slate-100">
           <div>
-            <h2 className="section-card-title">Recent Orders</h2>
-            <p className="section-card-subtitle">Your most recent purchases and tracking details</p>
+            <h2 className="text-lg font-bold text-slate-900">Recent Orders</h2>
+            <p className="text-xs text-slate-500 mt-0.5">Your most recent purchases and tracking details</p>
           </div>
           <Link
             to="/orders"
-            style={{
-              fontSize: '0.85rem',
-              fontWeight: 600,
-              color: 'var(--accent-color)',
-              textDecoration: 'none',
-            }}
+            className="text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors no-underline"
           >
             All Orders &rarr;
           </Link>
         </div>
 
         {loading ? (
-          <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-secondary)' }}>
+          <div className="py-12 text-center text-slate-500 text-xs sm:text-sm">
             Loading your orders...
           </div>
         ) : !data?.recentOrders || data.recentOrders.length === 0 ? (
-          <div className="placeholder-empty-state" style={{ border: 'none' }}>
-            <div className="empty-state-icon-box">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <div className="py-12 text-center">
+            <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
                 <line x1="3" y1="6" x2="21" y2="6" />
               </svg>
             </div>
-            <h3 className="empty-state-title">No orders placed yet</h3>
-            <p className="empty-state-desc">
+            <h3 className="text-sm font-bold text-slate-800">No orders placed yet</h3>
+            <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
               Browse our catalog of electronics, apparel, and lifestyle items to place your first order.
             </p>
-            <Link to="/products" className="admin-action-btn" style={{ marginTop: 16, textDecoration: 'none' }}>
+            <Link
+              to="/products"
+              className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold no-underline transition-colors shadow-xs"
+            >
               Start Shopping
             </Link>
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table className="products-table">
+          <div className="overflow-x-auto -mx-6 sm:-mx-8 px-6 sm:px-8 mt-4">
+            <table className="w-full text-left border-collapse text-xs sm:text-sm">
               <thead>
-                <tr>
-                  <th>Order #</th>
-                  <th>Date</th>
-                  <th>Items</th>
-                  <th>Total</th>
-                  <th>Payment</th>
-                  <th>Delivery Status</th>
+                <tr className="border-b border-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  <th className="pb-3 pr-4">Order #</th>
+                  <th className="pb-3 px-4">Date</th>
+                  <th className="pb-3 px-4">Items</th>
+                  <th className="pb-3 px-4">Total</th>
+                  <th className="pb-3 px-4">Payment</th>
+                  <th className="pb-3 pl-4">Delivery Status</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-slate-100">
                 {data.recentOrders.map((order) => {
                   const firstItem = order.items?.[0]?.name || 'Catalog Product';
                   const extraItems = (order.itemsCount || order.items?.length || 1) - 1;
                   const itemSummary = extraItems > 0 ? `${firstItem} (+${extraItems} more)` : firstItem;
 
                   return (
-                    <tr key={order._id}>
-                      <td style={{ fontWeight: 600, color: 'var(--accent-color)' }}>
+                    <tr key={order._id} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="py-4 pr-4 font-semibold text-blue-600">
                         {order.orderNumber || `ORD-${order._id.slice(-6).toUpperCase()}`}
                       </td>
-                      <td style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                      <td className="py-4 px-4 text-slate-500 text-xs">
                         {formatDate(order.createdAt)}
                       </td>
-                      <td style={{ maxWidth: 260, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <td className="py-4 px-4 max-w-[240px] truncate text-slate-700">
                         {itemSummary}
                       </td>
-                      <td style={{ fontWeight: 700 }}>
+                      <td className="py-4 px-4 font-bold text-slate-900">
                         ${typeof order.total === 'number' ? order.total.toFixed(2) : order.total}
                       </td>
-                      <td>
-                        <span className="payment-pill">
-                          <span className={`payment-dot ${order.paymentStatus || 'pending'}`} />
-                          <span style={{ textTransform: 'capitalize' }}>{order.paymentStatus || 'Pending'}</span>
+                      <td className="py-4 px-4">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 capitalize">
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              order.paymentStatus === 'paid'
+                                ? 'bg-emerald-500'
+                                : order.paymentStatus === 'failed'
+                                ? 'bg-rose-500'
+                                : 'bg-amber-500'
+                            }`}
+                          />
+                          {order.paymentStatus || 'Pending'}
                         </span>
                       </td>
-                      <td>
-                        <span className={`status-pill ${order.status || 'pending'}`}>
+                      <td className="py-4 pl-4">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
+                            order.status === 'delivered'
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : order.status === 'shipped'
+                              ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                              : order.status === 'cancelled'
+                              ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                              : 'bg-amber-50 text-amber-700 border border-amber-200'
+                          }`}
+                        >
                           {order.status || 'Pending'}
                         </span>
                       </td>
@@ -249,52 +284,47 @@ export default function CustomerDashboardView({ user }) {
         )}
       </div>
 
-      {/* Account Info & Support Card */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
-        <div className="content-card">
-          <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" color="var(--accent-color)">
+      {/* Account Info & Support Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs">
+          <h3 className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-600">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
               <circle cx="12" cy="7" r="4" />
             </svg>
             Customer Profile
           </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: '0.9rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f1f5f9', paddingBottom: 6 }}>
-              <span style={{ color: 'var(--text-secondary)' }}>Name:</span>
-              <span style={{ fontWeight: 600 }}>{user?.name}</span>
+          <div className="space-y-3 text-xs sm:text-sm">
+            <div className="flex justify-between items-center py-2 border-b border-slate-100">
+              <span className="text-slate-500">Name:</span>
+              <span className="font-semibold text-slate-900">{user?.name}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f1f5f9', paddingBottom: 6 }}>
-              <span style={{ color: 'var(--text-secondary)' }}>Email:</span>
-              <span style={{ fontWeight: 600 }}>{user?.email}</span>
+            <div className="flex justify-between items-center py-2 border-b border-slate-100">
+              <span className="text-slate-500">Email:</span>
+              <span className="font-semibold text-slate-900">{user?.email}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: 'var(--text-secondary)' }}>Access Level:</span>
-              <span style={{ fontWeight: 600, color: '#059669', textTransform: 'capitalize' }}>
+            <div className="flex justify-between items-center py-2">
+              <span className="text-slate-500">Access Level:</span>
+              <span className="font-semibold text-emerald-600 capitalize">
                 {user?.role || 'Customer'}
               </span>
             </div>
           </div>
         </div>
 
-        <div className="content-card" style={{ backgroundColor: '#f8fafc' }}>
-          <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" color="#059669">
+        <div className="bg-slate-50 rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs">
+          <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-600">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
             </svg>
             Buyer Protection Guarantee
           </h3>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: 12 }}>
+          <p className="text-xs sm:text-sm text-slate-500 leading-relaxed mb-4">
             Every purchase includes verified secure checkout, tracked parcel delivery, and our 30-day money-back satisfaction guarantee.
           </p>
           <Link
             to="/products"
-            style={{
-              fontSize: '0.85rem',
-              fontWeight: 600,
-              color: 'var(--accent-color)',
-              textDecoration: 'none',
-            }}
+            className="text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors no-underline"
           >
             Explore featured catalog deals &rarr;
           </Link>

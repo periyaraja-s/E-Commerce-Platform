@@ -141,60 +141,60 @@ export default function Products() {
   };
 
   return (
-    <div className="products-page-container">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
       {/* Page Header */}
-      <div className="page-header-block">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-          <div>
-            <h1 className="page-title">{isAdmin ? 'Product Inventory Management' : 'Products Catalog'}</h1>
-            <p className="page-subtitle">
-              {isAdmin
-                ? 'Centralized admin inventory table: manage stock, pricing, categories, and publication status.'
-                : 'Browse our collection, explore curated categories, and add items directly to your cart.'}
-            </p>
-          </div>
-
-          {isAdmin && (
-            <button
-              type="button"
-              className="btn-add-product-primary"
-              onClick={handleOpenCreateModal}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-              <span>Add New Product</span>
-            </button>
-          )}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            {isAdmin ? 'Product Inventory Management' : 'Products Catalog'}
+          </h1>
+          <p className="text-sm text-slate-500 mt-1 max-w-2xl">
+            {isAdmin
+              ? 'Centralized admin inventory table: manage stock, pricing, categories, and publication status.'
+              : 'Browse our collection, explore curated categories, and add items directly to your cart.'}
+          </p>
         </div>
+
+        {isAdmin && (
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-sm shadow-xs transition-colors cursor-pointer self-start sm:self-auto"
+            onClick={handleOpenCreateModal}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            <span>Add New Product</span>
+          </button>
+        )}
       </div>
 
       {/* Admin Quick Metrics Bar */}
       {isAdmin && inventoryStats && (
-        <div className="admin-stats-summary-grid" style={{ marginTop: 20 }}>
-          <div className="admin-stat-card">
-            <div className="admin-stat-label">Total SKUs</div>
-            <div className="admin-stat-val">{inventoryStats.total}</div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total SKUs</div>
+            <div className="text-2xl font-bold text-slate-900 mt-1">{inventoryStats.total}</div>
           </div>
-          <div className="admin-stat-card">
-            <div className="admin-stat-label">In Stock</div>
-            <div className="admin-stat-val" style={{ color: '#10b981' }}>{inventoryStats.inStock}</div>
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">In Stock</div>
+            <div className="text-2xl font-bold text-emerald-600 mt-1">{inventoryStats.inStock}</div>
           </div>
-          <div className="admin-stat-card">
-            <div className="admin-stat-label">Low Stock (≤10)</div>
-            <div className="admin-stat-val" style={{ color: '#d97706' }}>{inventoryStats.lowStock}</div>
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Low Stock (≤10)</div>
+            <div className="text-2xl font-bold text-amber-600 mt-1">{inventoryStats.lowStock}</div>
           </div>
-          <div className="admin-stat-card">
-            <div className="admin-stat-label">Out of Stock</div>
-            <div className="admin-stat-val" style={{ color: '#ef4444' }}>{inventoryStats.outOfStock}</div>
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Out of Stock</div>
+            <div className="text-2xl font-bold text-rose-600 mt-1">{inventoryStats.outOfStock}</div>
           </div>
         </div>
       )}
 
       {/* Action Banners */}
       {actionSuccessMsg && (
-        <div className="global-toast-notification success" style={{ position: 'static', marginBottom: 16, width: '100%' }}>
+        <div className="mt-4 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-medium flex items-center gap-2 shadow-xs">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <polyline points="20 6 9 17 4 12" />
           </svg>
@@ -203,23 +203,37 @@ export default function Products() {
       )}
 
       {errorMsg && (
-        <div className="catalog-error-banner" style={{ marginTop: 16, marginBottom: 16 }}>
+        <div className="mt-4 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm font-medium flex items-center justify-between gap-2 shadow-xs">
           <span>{errorMsg}</span>
-          <button type="button" onClick={loadProducts} className="catalog-retry-btn">Retry</button>
+          <button
+            type="button"
+            onClick={loadProducts}
+            className="px-3 py-1 bg-rose-100 hover:bg-rose-200 text-rose-900 rounded-lg text-xs font-semibold cursor-pointer transition-colors"
+          >
+            Retry
+          </button>
         </div>
       )}
 
       {/* Filter toolbar */}
-      <div className="products-filter-toolbar" style={{ marginTop: isAdmin ? 0 : 20 }}>
+      <div className="mt-6 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center gap-3">
         {/* Search */}
-        <div className="filter-search-box">
-          <svg className="search-icon-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <div className="relative flex-1 min-w-[240px]">
+          <svg
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
           <input
             type="text"
-            className="filter-search-input"
+            className="w-full pl-10 pr-9 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white placeholder-slate-400 transition-colors"
             placeholder={isAdmin ? 'Filter by name, SKU or keyword...' : 'Search products...'}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -227,7 +241,7 @@ export default function Products() {
           {search && (
             <button
               type="button"
-              className="search-clear-btn"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 font-bold text-sm cursor-pointer"
               onClick={() => setSearch('')}
               aria-label="Clear search"
             >
@@ -237,11 +251,13 @@ export default function Products() {
         </div>
 
         {/* Category (from database) */}
-        <div className="filter-select-group">
-          <label htmlFor="prod-cat-select" className="filter-label">Category:</label>
+        <div className="flex items-center gap-1.5">
+          <label htmlFor="prod-cat-select" className="text-xs font-semibold text-slate-600 whitespace-nowrap">
+            Category:
+          </label>
           <select
             id="prod-cat-select"
-            className="filter-select"
+            className="px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
           >
@@ -256,11 +272,13 @@ export default function Products() {
 
         {/* Admin-only Stock filter */}
         {isAdmin && (
-          <div className="filter-select-group">
-            <label htmlFor="prod-stock-filter" className="filter-label">Stock:</label>
+          <div className="flex items-center gap-1.5">
+            <label htmlFor="prod-stock-filter" className="text-xs font-semibold text-slate-600 whitespace-nowrap">
+              Stock:
+            </label>
             <select
               id="prod-stock-filter"
-              className="filter-select"
+              className="px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
               value={stockFilter}
               onChange={(e) => setStockFilter(e.target.value)}
             >
@@ -274,11 +292,13 @@ export default function Products() {
 
         {/* Admin-only Status filter */}
         {isAdmin && (
-          <div className="filter-select-group">
-            <label htmlFor="prod-status-filter" className="filter-label">Status:</label>
+          <div className="flex items-center gap-1.5">
+            <label htmlFor="prod-status-filter" className="text-xs font-semibold text-slate-600 whitespace-nowrap">
+              Status:
+            </label>
             <select
               id="prod-status-filter"
-              className="filter-select"
+              className="px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
@@ -290,11 +310,13 @@ export default function Products() {
         )}
 
         {/* Sort */}
-        <div className="filter-select-group">
-          <label htmlFor="prod-sort-select" className="filter-label">Sort:</label>
+        <div className="flex items-center gap-1.5">
+          <label htmlFor="prod-sort-select" className="text-xs font-semibold text-slate-600 whitespace-nowrap">
+            Sort:
+          </label>
           <select
             id="prod-sort-select"
-            className="filter-select"
+            className="px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
             value={sort}
             onChange={(e) => setSort(e.target.value)}
           >
@@ -309,7 +331,7 @@ export default function Products() {
       </div>
 
       {/* Main View Area: Admin Management Table vs Customer Product Cards */}
-      <div style={{ marginTop: 24 }}>
+      <div className="mt-8">
         {isAdmin ? (
           /* Admin Product Management Table */
           <AdminProductsTable
@@ -323,21 +345,21 @@ export default function Products() {
         ) : (
           /* Customer Shopping Card Catalog */
           loading ? (
-            <div className="products-grid-container">
-              {[1, 2, 3, 4, 5, 6].map((k) => (
-                <div key={k} className="product-skeleton-card">
-                  <div className="skeleton-image-box" />
-                  <div className="skeleton-content-box">
-                    <div className="skeleton-line short" />
-                    <div className="skeleton-line medium" />
-                    <div className="skeleton-line long" />
-                    <div className="skeleton-button" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((k) => (
+                <div key={k} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs animate-pulse">
+                  <div className="w-full aspect-square bg-slate-200" />
+                  <div className="p-4 space-y-3">
+                    <div className="w-1/3 h-3 bg-slate-200 rounded" />
+                    <div className="w-3/4 h-4 bg-slate-200 rounded" />
+                    <div className="w-1/2 h-4 bg-slate-200 rounded" />
+                    <div className="w-full h-9 bg-slate-100 rounded-xl mt-4" />
                   </div>
                 </div>
               ))}
             </div>
           ) : displayedProducts.length > 0 ? (
-            <div className="products-grid-container">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {displayedProducts.map((p) => (
                 <ProductCard
                   key={p._id || p.id}
@@ -347,12 +369,20 @@ export default function Products() {
               ))}
             </div>
           ) : (
-            <div className="products-empty-state">
-              <h3 className="empty-state-title">No products found</h3>
-              <p className="empty-state-desc">Try resetting your search query or choosing another category filter.</p>
+            <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center max-w-md mx-auto shadow-xs">
+              <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+              </div>
+              <h3 className="text-base font-bold text-slate-900">No products found</h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Try resetting your search query or choosing another category filter.
+              </p>
               <button
                 type="button"
-                className="btn-empty-reset"
+                className="mt-4 px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 transition-colors cursor-pointer"
                 onClick={() => {
                   setSearch('');
                   setCategory('all');
