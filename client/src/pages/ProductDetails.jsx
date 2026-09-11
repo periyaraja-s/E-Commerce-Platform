@@ -78,32 +78,35 @@ export default function ProductDetails() {
 
   if (loading) {
     return (
-      <div className="empty-state-container" style={{ minHeight: '50vh' }}>
-        <div className="empty-state-icon-box">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 flex flex-col items-center justify-center text-center">
+        <div className="w-12 h-12 rounded-2xl bg-slate-100 text-blue-600 flex items-center justify-center mb-3 animate-pulse">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="12" cy="12" r="10" />
             <path d="M12 6v6l4 2" />
           </svg>
         </div>
-        <h3 className="empty-state-title">Loading Product Details</h3>
-        <p className="empty-state-desc">Fetching specifications and real-time inventory...</p>
+        <h3 className="text-lg font-bold text-slate-900">Loading Product Details</h3>
+        <p className="text-xs sm:text-sm text-slate-500 mt-1">Fetching specifications and real-time inventory...</p>
       </div>
     );
   }
 
   if (error || !product) {
     return (
-      <div className="empty-state-container" style={{ minHeight: '50vh' }}>
-        <div className="empty-state-icon-box" style={{ backgroundColor: 'var(--danger-light)', color: 'var(--danger-color)' }}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 flex flex-col items-center justify-center text-center">
+        <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mb-3">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="12" cy="12" r="10" />
             <line x1="12" y1="8" x2="12" y2="12" />
             <line x1="12" y1="16" x2="12.01" y2="16" />
           </svg>
         </div>
-        <h3 className="empty-state-title">Product Unavailable</h3>
-        <p className="empty-state-desc">{error || 'The requested product could not be found or has been removed.'}</p>
-        <Link to="/products" className="admin-action-btn" style={{ marginTop: 16 }}>
+        <h3 className="text-lg font-bold text-slate-900">Product Unavailable</h3>
+        <p className="text-xs sm:text-sm text-slate-500 mt-1">{error || 'The requested product could not be found or has been removed.'}</p>
+        <Link
+          to="/products"
+          className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold transition-colors no-underline"
+        >
           Return to Products
         </Link>
       </div>
@@ -118,22 +121,24 @@ export default function ProductDetails() {
   const isOutOfStock = product.stock <= 0;
 
   return (
-    <div className="product-details-container">
-      <div className="breadcrumb-nav">
-        <Link to="/products">&larr; Back to Products</Link>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+      <div className="flex items-center flex-wrap gap-2 text-xs sm:text-sm text-slate-500 mb-6 font-medium">
+        <Link to="/products" className="text-slate-600 hover:text-blue-600 transition-colors no-underline">
+          &larr; Back to Products
+        </Link>
         <span>/</span>
         <span>{categoryName}</span>
         <span>/</span>
-        <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{product.name}</span>
+        <span className="text-slate-900 font-semibold">{product.name}</span>
       </div>
 
-      <div className="product-details-card">
+      <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 p-6 sm:p-10">
         {/* Gallery */}
-        <div className="product-detail-gallery">
+        <div>
           <img
             src={imageUrl}
             alt={product.name}
-            className="product-detail-img-main"
+            className="w-full aspect-square object-cover rounded-2xl bg-slate-50 border border-slate-100"
             onError={(e) => {
               e.target.src = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80';
             }}
@@ -141,85 +146,65 @@ export default function ProductDetails() {
         </div>
 
         {/* Info */}
-        <div className="product-detail-info">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-            <span className="badge-tag badge-category">{categoryName}</span>
-            <span className={`badge-tag ${isOutOfStock ? 'badge-out-of-stock' : 'badge-stock'}`}>
-              {isOutOfStock ? 'Out of Stock' : `${product.stock} in stock`}
-            </span>
-          </div>
-
-          <h1 className="product-detail-title">{product.name}</h1>
-
-          <div className="product-detail-price">${Number(product.price).toFixed(2)}</div>
-
-          <div className="product-detail-meta-list">
-            <div className="meta-row">
-              <span className="meta-label">SKU / Slug:</span>
-              <span className="meta-value" style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>
-                {product.slug || product._id}
+        <div className="flex flex-col justify-between">
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+                {categoryName}
+              </span>
+              <span
+                className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                  isOutOfStock ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-800'
+                }`}
+              >
+                {isOutOfStock ? 'Out of Stock' : `${product.stock} in stock`}
               </span>
             </div>
-            <div className="meta-row">
-              <span className="meta-label">Category:</span>
-              <span className="meta-value">{categoryName}</span>
-            </div>
-            <div className="meta-row">
-              <span className="meta-label">Inventory:</span>
-              <span className="meta-value" style={{ color: isOutOfStock ? 'var(--danger-color)' : '#10b981' }}>
-                {isOutOfStock ? 'Currently Sold Out' : `${product.stock} Units Available`}
-              </span>
-            </div>
-          </div>
 
-          <p className="product-detail-desc">{product.description}</p>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">{product.name}</h1>
+
+            <div className="text-3xl font-extrabold text-blue-600 mt-3">${Number(product.price).toFixed(2)}</div>
+
+            <div className="mt-6 py-4 border-y border-slate-100 space-y-2.5 text-xs sm:text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 font-medium">SKU / Slug:</span>
+                <span className="font-mono text-slate-700">{product.slug || product._id}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 font-medium">Category:</span>
+                <span className="font-semibold text-slate-900">{categoryName}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 font-medium">Inventory:</span>
+                <span className={`font-semibold ${isOutOfStock ? 'text-rose-600' : 'text-emerald-600'}`}>
+                  {isOutOfStock ? 'Currently Sold Out' : `${product.stock} Units Available`}
+                </span>
+              </div>
+            </div>
+
+            <p className="mt-6 text-sm sm:text-base text-slate-600 leading-relaxed">{product.description}</p>
+          </div>
 
           {/* Customer Purchasing Controls (Hidden from Admin) */}
           {!isAdmin && (
-            <>
-              <div className="product-detail-actions">
+            <div className="mt-8 pt-6 border-t border-slate-100">
+              <div className="flex items-center gap-3">
                 {!isOutOfStock && (
-                  <div style={{ display: 'flex', alignItems: 'center', border: '1px solid var(--border-color)', borderRadius: 8, overflow: 'hidden' }}>
+                  <div className="flex items-center border border-slate-300 rounded-xl overflow-hidden bg-slate-50 shrink-0">
                     <button
                       type="button"
-                      style={{
-                        width: 38,
-                        height: 44,
-                        border: 'none',
-                        background: '#f8fafc',
-                        cursor: 'pointer',
-                        fontSize: '1.1rem',
-                        fontWeight: 600,
-                      }}
+                      className="w-10 h-11 flex items-center justify-center text-slate-600 hover:bg-slate-200 text-base font-bold transition-colors cursor-pointer border-0 bg-transparent"
                       onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                       disabled={quantity <= 1}
                     >
                       -
                     </button>
-                    <div
-                      style={{
-                        width: 44,
-                        height: 44,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontWeight: 600,
-                        fontSize: '0.95rem',
-                      }}
-                    >
+                    <div className="w-11 h-11 flex items-center justify-center font-bold text-slate-900 text-sm">
                       {quantity}
                     </div>
                     <button
                       type="button"
-                      style={{
-                        width: 38,
-                        height: 44,
-                        border: 'none',
-                        background: '#f8fafc',
-                        cursor: 'pointer',
-                        fontSize: '1.1rem',
-                        fontWeight: 600,
-                      }}
+                      className="w-10 h-11 flex items-center justify-center text-slate-600 hover:bg-slate-200 text-base font-bold transition-colors cursor-pointer border-0 bg-transparent"
                       onClick={() => setQuantity((q) => Math.min(product.stock, q + 1))}
                       disabled={quantity >= product.stock}
                     >
@@ -230,7 +215,7 @@ export default function ProductDetails() {
 
                 <button
                   type="button"
-                  className="btn-add-to-cart"
+                  className="flex-1 py-3 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-sm cursor-pointer shadow-xs transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                   disabled={isOutOfStock}
                   onClick={handleAddToCart}
                 >
@@ -244,57 +229,38 @@ export default function ProductDetails() {
               </div>
 
               {addedNotice && (
-                <div
-                  style={{
-                    marginTop: 12,
-                    padding: '8px 14px',
-                    borderRadius: 8,
-                    backgroundColor: '#ecfdf5',
-                    color: '#065f46',
-                    border: '1px solid #a7f3d0',
-                    fontSize: '0.88rem',
-                    fontWeight: 500,
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 8,
-                  }}
-                >
+                <div className="mt-3 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path d="M20 6L9 17l-5-5" />
                   </svg>
                   Added {quantity} item(s) to your shopping cart!
                 </div>
               )}
-            </>
+            </div>
           )}
 
           {/* Admin Management Controls */}
           {isAdmin && (
-            <div
-              style={{
-                marginTop: 24,
-                padding: '20px',
-                borderRadius: 10,
-                backgroundColor: '#f8fafc',
-                border: '1px solid var(--border-color)',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <div className="mt-8 p-6 rounded-2xl bg-slate-50 border border-slate-200">
+              <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h4 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>Admin Product Controls</h4>
-                  <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', marginTop: 2 }}>
+                  <h4 className="text-sm font-bold text-slate-900">Admin Product Controls</h4>
+                  <p className="text-xs text-slate-500 mt-0.5">
                     Update product details, stock levels, or delete this SKU.
                   </p>
                 </div>
-                <span className={`badge-tag ${product.isActive ? 'badge-stock' : 'badge-out-of-stock'}`}>
+                <span
+                  className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                    product.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'
+                  }`}
+                >
                   {product.isActive ? 'Status: Active' : 'Status: Inactive'}
                 </span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  className="btn-card-action"
-                  style={{ minWidth: 140, padding: '10px 18px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                  className="px-4 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold inline-flex items-center gap-2 cursor-pointer shadow-xs transition-colors"
                   onClick={() => setIsEditModalOpen(true)}
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
@@ -305,8 +271,7 @@ export default function ProductDetails() {
                 </button>
                 <button
                   type="button"
-                  className="btn-card-action btn-delete-alt"
-                  style={{ minWidth: 140, padding: '10px 18px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                  className="px-4 py-2.5 rounded-xl border border-rose-200 bg-rose-50/50 hover:bg-rose-100 text-rose-700 text-xs font-semibold inline-flex items-center gap-2 cursor-pointer shadow-xs transition-colors disabled:opacity-50"
                   disabled={isDeleting}
                   onClick={handleDelete}
                 >

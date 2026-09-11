@@ -479,14 +479,35 @@ export async function createOrder(req, res) {
 /**
  * GET /api/orders
  * List orders. Customers only see their own orders; Admins see all orders.
+ * Supports status filtering and search query parameters.
  */
 export async function listOrders(req, res) {
   try {
     const userId = req.user._id || req.user.id;
     const isAdmin = req.user.role === 'admin';
+    const { status, search } = req.query;
 
     if (mongoose.connection.readyState === 1) {
       const query = isAdmin ? {} : { user: userId };
+
+      if (status && status !== 'all') {
+        query.status = status.toLowerCase();
+      }
+
+      if (search && search.trim()) {
+        const searchRegex = new RegExp(search.trim(), 'i');
+        const searchConditions = [
+          { orderNumber: searchRegex },
+          { 'shippingAddress.name': searchRegex },
+        ];
+        if (query.$or) {
+          query.$and = [{ $or: query.$or }, { $or: searchConditions }];
+          delete query.$or;
+        } else {
+          query.$or = searchConditions;
+        }
+      }
+
       const orders = await Order.find(query)
         .populate('user', 'name email role')
         .populate('items.product', 'name slug images category price stock')
@@ -500,14 +521,34 @@ export async function listOrders(req, res) {
     }
 
     // In-memory fallback
-    const filteredOrders = isAdmin
+    let filteredOrders = isAdmin
       ? [...memoryOrders]
       : memoryOrders.filter(
           (o) =>
             (o.user?._id && o.user._id.toString() === userId.toString()) ||
-            (o.user?.email && o.user.email === req.user.email) ||
-            o.user === userId
+            (o.user?.email && req.user.email && o.user.email.toLowerCase() === req.user.email.toLowerCase()) ||
+            o.user === userId ||
+            (typeof o.user === 'string' && o.user === userId.toString())
         );
+
+    // Apply status filter
+    if (status && status !== 'all') {
+      filteredOrders = filteredOrders.filter(
+        (o) => o.status?.toLowerCase() === status.toLowerCase()
+      );
+    }
+
+    // Apply search filter (order number, customer name, email, or shipping recipient)
+    if (search && search.trim()) {
+      const s = search.trim().toLowerCase();
+      filteredOrders = filteredOrders.filter(
+        (o) =>
+          o.orderNumber?.toLowerCase().includes(s) ||
+          o.user?.name?.toLowerCase().includes(s) ||
+          o.user?.email?.toLowerCase().includes(s) ||
+          o.shippingAddress?.name?.toLowerCase().includes(s)
+      );
+    }
 
     filteredOrders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
@@ -529,6 +570,7 @@ export async function listOrders(req, res) {
 /**
  * GET /api/orders/:id
  * Retrieve full order details by ID or Order Number
+ * Enforces customer ownership: Customers can only access their own orders.
  */
 export async function getOrderById(req, res) {
   try {
@@ -553,10 +595,17 @@ export async function getOrderById(req, res) {
 
       // Authorization guard: customers can only view their own orders
       const orderOwnerId = order.user?._id?.toString() || order.user?.toString();
-      if (!isAdmin && orderOwnerId !== userId.toString()) {
+      const orderOwnerEmail = order.user?.email?.toLowerCase();
+      const userEmail = req.user.email?.toLowerCase();
+
+      const isOwner =
+        orderOwnerId === userId.toString() ||
+        (orderOwnerEmail && userEmail && orderOwnerEmail === userEmail);
+
+      if (!isAdmin && !isOwner) {
         return res.status(403).json({
           success: false,
-          message: 'You are not authorized to view this order',
+          message: 'Access denied: You are only authorized to view your own orders.',
         });
       }
 
@@ -585,10 +634,17 @@ export async function getOrderById(req, res) {
     }
 
     const orderOwnerId = order.user?._id?.toString() || order.user?.toString();
-    if (!isAdmin && orderOwnerId !== userId.toString() && order.user?.email !== req.user.email) {
+    const orderOwnerEmail = order.user?.email?.toLowerCase();
+    const userEmail = req.user.email?.toLowerCase();
+
+    const isOwner =
+      orderOwnerId === userId.toString() ||
+      (orderOwnerEmail && userEmail && orderOwnerEmail === userEmail);
+
+    if (!isAdmin && !isOwner) {
       return res.status(403).json({
         success: false,
-        message: 'You are not authorized to view this order',
+        message: 'Access denied: You are only authorized to view your own orders.',
       });
     }
 
@@ -609,11 +665,20 @@ export async function getOrderById(req, res) {
 /**
  * PATCH /api/orders/:id/status
  * Admin update order status (pending, confirmed, processing, shipped, delivered, cancelled)
+ * Enforces admin-only access and validates business status transition rules server-side.
  */
 export async function updateOrderStatus(req, res) {
   try {
     const { id } = req.params;
     const { status, paymentStatus } = req.body;
+
+    // Enforce admin-only order management
+    if (req.user?.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: Administrator privileges required to manage orders.',
+      });
+    }
 
     const validStatuses = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
     const validPaymentStatuses = ['pending', 'paid', 'failed', 'refunded'];
@@ -644,6 +709,23 @@ export async function updateOrderStatus(req, res) {
         });
       }
 
+      // Server-side validation of status transition rules:
+      // 1. Cancelled orders are final
+      if (order.status === 'cancelled' && status && status !== 'cancelled') {
+        return res.status(400).json({
+          success: false,
+          message: 'Order has already been cancelled and inventory was returned. Cancelled orders cannot be reactivated.',
+        });
+      }
+
+      // 2. Delivered orders cannot be reverted
+      if (order.status === 'delivered' && status && status !== 'delivered') {
+        return res.status(400).json({
+          success: false,
+          message: 'Delivered orders are complete and cannot be transitioned to pending, confirmed, or cancelled.',
+        });
+      }
+
       // If updating to cancelled from a non-cancelled state, restore product stock
       if (status === 'cancelled' && order.status !== 'cancelled') {
         for (const item of order.items) {
@@ -655,6 +737,11 @@ export async function updateOrderStatus(req, res) {
 
       if (status) order.status = status;
       if (paymentStatus) order.paymentStatus = paymentStatus;
+
+      // Auto mark payment as paid if delivered and payment was pending COD
+      if (status === 'delivered' && order.paymentStatus === 'pending') {
+        order.paymentStatus = 'paid';
+      }
 
       await order.save();
       await order.populate('user', 'name email');
@@ -675,6 +762,21 @@ export async function updateOrderStatus(req, res) {
       });
     }
 
+    // Server-side validation of status transition rules:
+    if (order.status === 'cancelled' && status && status !== 'cancelled') {
+      return res.status(400).json({
+        success: false,
+        message: 'Order has already been cancelled and inventory was returned. Cancelled orders cannot be reactivated.',
+      });
+    }
+
+    if (order.status === 'delivered' && status && status !== 'delivered') {
+      return res.status(400).json({
+        success: false,
+        message: 'Delivered orders are complete and cannot be transitioned to pending, confirmed, or cancelled.',
+      });
+    }
+
     if (status === 'cancelled' && order.status !== 'cancelled') {
       for (const item of order.items) {
         const p = getMemoryProductById(item.product);
@@ -684,6 +786,9 @@ export async function updateOrderStatus(req, res) {
 
     if (status) order.status = status;
     if (paymentStatus) order.paymentStatus = paymentStatus;
+    if (status === 'delivered' && order.paymentStatus === 'pending') {
+      order.paymentStatus = 'paid';
+    }
     order.updatedAt = new Date().toISOString();
 
     return res.json({

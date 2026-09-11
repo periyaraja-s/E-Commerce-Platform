@@ -5,101 +5,105 @@ import PublicFooter from '../components/PublicFooter.jsx';
 
 export default function About() {
   return (
-    <div className="landing-page-root" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="min-h-screen flex flex-col bg-slate-50">
       <PublicHeader />
 
-      <main style={{ flex: 1, backgroundColor: 'var(--bg-app)', padding: '48px 24px' }}>
-        <div style={{ maxWidth: 860, margin: '0 auto' }}>
-          {/* Breadcrumb */}
-          <nav style={{ marginBottom: 24, fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
-            <Link to="/" style={{ color: 'var(--accent-color)', textDecoration: 'none' }}>Home</Link>
-            <span style={{ margin: '0 8px' }}>/</span>
-            <span>About Us</span>
-          </nav>
+      <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Breadcrumb */}
+        <nav className="mb-6 text-xs sm:text-sm text-slate-500 flex items-center gap-2">
+          <Link to="/" className="text-blue-600 hover:text-blue-700 transition-colors no-underline">Home</Link>
+          <span className="text-slate-300">/</span>
+          <span className="text-slate-800 font-medium">About Us</span>
+        </nav>
 
-          {/* Header */}
-          <div style={{ marginBottom: 40, borderBottom: '1px solid var(--border-color)', paddingBottom: 28 }}>
-            <h1 style={{ fontSize: '2.4rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em', marginBottom: 12 }}>
-              About E-Commerce Platform
-            </h1>
-            <p style={{ fontSize: '1.12rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-              Crafted for reliability, speed, and modern digital commerce. Discover our mission, core values, and engineering standards.
+        {/* Header */}
+        <div className="mb-10 pb-8 border-b border-slate-200">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-3">
+            About E-Commerce Platform
+          </h1>
+          <p className="text-sm sm:text-base text-slate-500 leading-relaxed max-w-2xl">
+            Crafted for reliability, speed, and modern digital commerce. Discover our mission, core values, and engineering standards.
+          </p>
+        </div>
+
+        {/* Content sections */}
+        <div className="space-y-8 text-slate-700 leading-relaxed">
+          <section className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs">
+            <h2 className="text-lg sm:text-xl font-bold text-slate-900 mb-3">
+              Our Mission
+            </h2>
+            <p className="text-sm text-slate-600 mb-4">
+              At E-Commerce Platform, we believe online shopping should be seamless, transparent, and built on rock-solid infrastructure. We bring together top-tier product catalog curation, accurate real-time inventory management, and instantaneous checkout processing.
             </p>
-          </div>
+            <p className="text-sm text-slate-600">
+              Whether you are browsing for the latest consumer technology, contemporary apparel, or modern home accents, our platform guarantees that what you see in stock is authentic, reserved in real time, and dispatched swiftly.
+            </p>
+          </section>
 
-          {/* Content sections */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 32, lineHeight: 1.7, color: 'var(--text-primary)' }}>
-            <section style={{ background: 'var(--bg-card)', padding: '32px', borderRadius: 12, border: '1px solid var(--border-color)' }}>
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: 14, color: 'var(--text-primary)' }}>
-                Our Mission
-              </h2>
-              <p style={{ color: 'var(--text-secondary)', marginBottom: 16 }}>
-                At E-Commerce Platform, we believe online shopping should be seamless, transparent, and built on rock-solid infrastructure. We bring together top-tier product catalog curation, accurate real-time inventory management, and instantaneous checkout processing.
+          <section className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs">
+              <div className="w-11 h-11 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg>
+              </div>
+              <h3 className="text-base font-bold text-slate-900 mb-2">Secure Transactions</h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                End-to-end encrypted session credentials, protected payment gateways, and strict data privacy protocols.
               </p>
-              <p style={{ color: 'var(--text-secondary)' }}>
-                Whether you are browsing for the latest consumer technology, contemporary apparel, or modern home accents, our platform guarantees that what you see in stock is authentic, reserved in real time, and dispatched swiftly.
+            </div>
+
+            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs">
+              <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <rect x="1" y="3" width="15" height="13" />
+                  <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+                  <circle cx="5.5" cy="18.5" r="2.5" />
+                  <circle cx="18.5" cy="18.5" r="2.5" />
+                </svg>
+              </div>
+              <h3 className="text-base font-bold text-slate-900 mb-2">Fast Fulfillment</h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Orders are processed and verified within hours, supported by real-time inventory decrementing and shipment tracking.
               </p>
-            </section>
+            </div>
 
-            <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 20 }}>
-              <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: 12, border: '1px solid var(--border-color)' }}>
-                <div style={{ width: 44, height: 44, borderRadius: 8, background: '#eff6ff', color: 'var(--accent-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                  </svg>
-                </div>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: 8 }}>Secure Transactions</h3>
-                <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)' }}>
-                  End-to-end encrypted session credentials, protected payment gateways, and strict data privacy protocols.
-                </p>
+            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs">
+              <div className="w-11 h-11 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <polyline points="23 4 23 10 17 10" />
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                </svg>
               </div>
-
-              <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: 12, border: '1px solid var(--border-color)' }}>
-                <div style={{ width: 44, height: 44, borderRadius: 8, background: '#ecfdf5', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                    <rect x="1" y="3" width="15" height="13" />
-                    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
-                    <circle cx="5.5" cy="18.5" r="2.5" />
-                    <circle cx="18.5" cy="18.5" r="2.5" />
-                  </svg>
-                </div>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: 8 }}>Fast Fulfillment</h3>
-                <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)' }}>
-                  Orders are processed and verified within hours, supported by real-time inventory decrementing and shipment tracking.
-                </p>
-              </div>
-
-              <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: 12, border: '1px solid var(--border-color)' }}>
-                <div style={{ width: 44, height: 44, borderRadius: 8, background: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                    <polyline points="23 4 23 10 17 10" />
-                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-                  </svg>
-                </div>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: 8 }}>Hassle-Free Returns</h3>
-                <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)' }}>
-                  Shop with complete peace of mind. Benefit from our clear 30-day return policy and straightforward refund processing.
-                </p>
-              </div>
-            </section>
-
-            <section style={{ background: 'var(--bg-card)', padding: '32px', borderRadius: 12, border: '1px solid var(--border-color)' }}>
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: 14, color: 'var(--text-primary)' }}>
-                Our Technology Architecture
-              </h2>
-              <p style={{ color: 'var(--text-secondary)', marginBottom: 14 }}>
-                Powered by a performant, production-ready MERN stack with modern Vite frontend architecture, MongoDB document models, role-based JWT authentication, and atomic inventory stock controls.
+              <h3 className="text-base font-bold text-slate-900 mb-2">Hassle-Free Returns</h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Shop with complete peace of mind. Benefit from our clear 30-day return policy and straightforward refund processing.
               </p>
-              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 18 }}>
-                <Link to="/products" className="btn-card-action btn-card-primary" style={{ padding: '10px 20px', textDecoration: 'none' }}>
-                  Explore Our Products
-                </Link>
-                <Link to="/returns" className="btn-card-action" style={{ padding: '10px 20px', textDecoration: 'none' }}>
-                  Review Return Policy
-                </Link>
-              </div>
-            </section>
-          </div>
+            </div>
+          </section>
+
+          <section className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs">
+            <h2 className="text-lg sm:text-xl font-bold text-slate-900 mb-3">
+              Our Technology Architecture
+            </h2>
+            <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+              Powered by a performant, production-ready MERN stack with modern Vite frontend architecture, MongoDB document models, role-based JWT authentication, and atomic inventory stock controls.
+            </p>
+            <div className="flex items-center gap-3 flex-wrap">
+              <Link
+                to="/products"
+                className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold transition-colors no-underline shadow-xs"
+              >
+                Explore Our Products
+              </Link>
+              <Link
+                to="/returns"
+                className="px-5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-semibold transition-colors no-underline shadow-xs"
+              >
+                Review Return Policy
+              </Link>
+            </div>
+          </section>
         </div>
       </main>
 
