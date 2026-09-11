@@ -148,7 +148,7 @@ export default function LandingPage() {
             </div>
             <div className="landing-brand-text">
               <span className="landing-brand-title">E-Commerce Platform</span>
-              <span className="landing-brand-sub">Premium Storefront</span>
+              <span className="landing-brand-sub">Premium Marketplace</span>
             </div>
           </Link>
 
