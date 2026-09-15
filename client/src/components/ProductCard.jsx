@@ -32,13 +32,16 @@ export default function ProductCard({ product, onQuickView }) {
   };
 
   return (
-    <div className="catalog-product-card" onClick={() => onQuickView && onQuickView(product)}>
+    <div
+      className="group bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-md hover:border-slate-300 transition-all flex flex-col cursor-pointer"
+      onClick={() => onQuickView && onQuickView(product)}
+    >
       {/* Card Image Container */}
-      <div className="product-card-image-wrapper">
+      <div className="relative aspect-4/3 w-full bg-slate-100 overflow-hidden">
         <img
           src={imageUrl}
           alt={product.name}
-          className="product-card-img"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           loading="lazy"
           onError={(e) => {
             e.target.src = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80';
@@ -46,12 +49,18 @@ export default function ProductCard({ product, onQuickView }) {
         />
 
         {/* Category Badge */}
-        <span className="product-card-badge-category">{categoryName}</span>
+        <span className="absolute top-3 left-3 px-2.5 py-1 rounded-md text-xs font-semibold bg-white/90 backdrop-blur-xs text-slate-700 shadow-xs border border-white/40">
+          {categoryName}
+        </span>
 
         {/* Stock Badge */}
         <span
-          className={`product-card-badge-stock ${
-            isOutOfStock ? 'badge-out' : isLowStock ? 'badge-low' : 'badge-in'
+          className={`absolute top-3 right-3 px-2 py-0.5 rounded-md text-[11px] font-semibold tracking-wide uppercase ${
+            isOutOfStock
+              ? 'bg-rose-100 text-rose-700 border border-rose-200'
+              : isLowStock
+              ? 'bg-amber-100 text-amber-800 border border-amber-200'
+              : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
           }`}
         >
           {isOutOfStock ? 'Sold Out' : isLowStock ? `Only ${product.stock} Left` : 'In Stock'}
@@ -60,7 +69,7 @@ export default function ProductCard({ product, onQuickView }) {
         {/* Hover Quick View Trigger */}
         <button
           type="button"
-          className="product-card-quickview-btn"
+          className="absolute inset-x-4 bottom-3 py-2 rounded-xl bg-white/95 backdrop-blur-xs text-slate-800 text-xs font-semibold shadow-md flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white cursor-pointer"
           onClick={(e) => {
             e.stopPropagation();
             if (onQuickView) onQuickView(product);
@@ -76,26 +85,26 @@ export default function ProductCard({ product, onQuickView }) {
       </div>
 
       {/* Card Details Body */}
-      <div className="product-card-body">
-        <div className="product-card-rating">
-          <div className="stars-row">
-            {'★'.repeat(5)}
+      <div className="p-4 flex flex-col flex-1 justify-between gap-2.5">
+        <div>
+          <div className="flex items-center gap-1 text-xs text-amber-500 font-medium mb-1">
+            <span>{'★'.repeat(5)}</span>
+            <span className="text-slate-500 ml-1">4.9</span>
           </div>
-          <span className="rating-score">4.9</span>
+
+          <h3 className="font-semibold text-slate-900 text-sm line-clamp-1 group-hover:text-blue-600 transition-colors" title={product.name}>
+            {product.name}
+          </h3>
+
+          <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed mt-1">
+            {product.description || 'Premium quality materials crafted for everyday excellence.'}
+          </p>
         </div>
 
-        <h3 className="product-card-name" title={product.name}>
-          {product.name}
-        </h3>
-
-        <p className="product-card-desc">
-          {product.description || 'Premium quality materials crafted for everyday excellence.'}
-        </p>
-
-        <div className="product-card-footer">
-          <div className="product-card-price-col">
-            <span className="product-card-price-label">Price</span>
-            <span className="product-card-price-val">
+        <div className="flex items-center justify-between pt-3 border-t border-slate-100 mt-auto">
+          <div>
+            <span className="block text-[11px] text-slate-400 uppercase tracking-wider font-medium">Price</span>
+            <span className="text-base font-bold text-slate-900">
               ${Number(product.price).toFixed(2)}
             </span>
           </div>
@@ -103,7 +112,7 @@ export default function ProductCard({ product, onQuickView }) {
           {isAdmin ? (
             <button
               type="button"
-              className="btn-card-manage-action"
+              className="py-1.5 px-3 rounded-lg text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 flex items-center gap-1.5 transition-colors cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation();
                 navigate(`/products/${product._id || product.id}`);
@@ -119,7 +128,13 @@ export default function ProductCard({ product, onQuickView }) {
           ) : (
             <button
               type="button"
-              className={`btn-card-add-cart ${justAdded ? 'added' : ''} ${isOutOfStock ? 'disabled' : ''}`}
+              className={`py-1.5 px-3.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                isOutOfStock
+                  ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                  : justAdded
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white shadow-xs'
+              }`}
               disabled={isOutOfStock}
               onClick={handleAddToCart}
               title={
@@ -134,14 +149,14 @@ export default function ProductCard({ product, onQuickView }) {
                 <span>Out of Stock</span>
               ) : justAdded ? (
                 <>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
                   <span>Added!</span>
                 </>
               ) : (
                 <>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                     <circle cx="9" cy="21" r="1" />
                     <circle cx="20" cy="21" r="1" />
                     <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />

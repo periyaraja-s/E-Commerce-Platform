@@ -125,28 +125,42 @@ export default function ProductFormModal({ isOpen, onClose, onSuccess, productTo
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2 className="modal-title">{isEditing ? 'Edit Product' : 'Add New Product'}</h2>
-          <button type="button" className="modal-close-btn" onClick={onClose} aria-label="Close modal">
+    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 overflow-y-auto" onClick={onClose}>
+      <div
+        className="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col my-auto max-h-[90vh]"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 shrink-0">
+          <h2 className="text-lg font-bold text-slate-900">{isEditing ? 'Edit Product' : 'Add New Product'}</h2>
+          <button
+            type="button"
+            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors cursor-pointer text-base leading-none"
+            onClick={onClose}
+            aria-label="Close modal"
+          >
             &times;
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-          <div className="modal-body">
-            {errorMsg && <div className="form-error-banner">{errorMsg}</div>}
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          <div className="p-6 overflow-y-auto space-y-4">
+            {errorMsg && (
+              <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+                {errorMsg}
+              </div>
+            )}
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="prod-name">
-                Product Name <span className="req">*</span>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5" htmlFor="prod-name">
+                Product Name <span className="text-rose-500">*</span>
               </label>
               <input
                 id="prod-name"
                 name="name"
                 type="text"
-                className="form-control"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors"
                 placeholder="e.g. Wireless ANC Headphones"
                 value={formData.name}
                 onChange={handleChange}
@@ -154,15 +168,15 @@ export default function ProductFormModal({ isOpen, onClose, onSuccess, productTo
               />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-              <div className="form-group">
-                <label className="form-label" htmlFor="prod-category">
-                  Category <span className="req">*</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5" htmlFor="prod-category">
+                  Category <span className="text-rose-500">*</span>
                 </label>
                 <select
                   id="prod-category"
                   name="category"
-                  className="form-control"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors"
                   value={formData.category}
                   onChange={handleChange}
                   required
@@ -178,9 +192,9 @@ export default function ProductFormModal({ isOpen, onClose, onSuccess, productTo
                 </select>
               </div>
 
-              <div className="form-group">
-                <label className="form-label" htmlFor="prod-price">
-                  Price ($) <span className="req">*</span>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5" htmlFor="prod-price">
+                  Price ($) <span className="text-rose-500">*</span>
                 </label>
                 <input
                   id="prod-price"
@@ -188,7 +202,7 @@ export default function ProductFormModal({ isOpen, onClose, onSuccess, productTo
                   type="number"
                   step="0.01"
                   min="0"
-                  className="form-control"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors"
                   placeholder="0.00"
                   value={formData.price}
                   onChange={handleChange}
@@ -197,10 +211,10 @@ export default function ProductFormModal({ isOpen, onClose, onSuccess, productTo
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-              <div className="form-group">
-                <label className="form-label" htmlFor="prod-stock">
-                  Stock Units <span className="req">*</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5" htmlFor="prod-stock">
+                  Stock Units <span className="text-rose-500">*</span>
                 </label>
                 <input
                   id="prod-stock"
@@ -208,7 +222,7 @@ export default function ProductFormModal({ isOpen, onClose, onSuccess, productTo
                   type="number"
                   min="0"
                   step="1"
-                  className="form-control"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors"
                   placeholder="0"
                   value={formData.stock}
                   onChange={handleChange}
@@ -216,15 +230,15 @@ export default function ProductFormModal({ isOpen, onClose, onSuccess, productTo
                 />
               </div>
 
-              <div className="form-group">
-                <label className="form-label" htmlFor="prod-slug">
-                  Custom Slug <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5" htmlFor="prod-slug">
+                  Custom Slug <span className="text-slate-400 font-normal">(optional)</span>
                 </label>
                 <input
                   id="prod-slug"
                   name="slug"
                   type="text"
-                  className="form-control"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors"
                   placeholder="e.g. wireless-anc-headphones"
                   value={formData.slug}
                   onChange={handleChange}
@@ -232,49 +246,43 @@ export default function ProductFormModal({ isOpen, onClose, onSuccess, productTo
               </div>
             </div>
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="prod-img">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5" htmlFor="prod-img">
                 Image URL
               </label>
               <input
                 id="prod-img"
                 name="imageUrl"
                 type="url"
-                className="form-control"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors"
                 placeholder="https://images.unsplash.com/..."
                 value={formData.imageUrl}
                 onChange={handleChange}
               />
               {formData.imageUrl && (
-                <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div className="mt-2 flex items-center gap-3">
                   <img
                     src={formData.imageUrl}
                     alt="Preview"
-                    style={{
-                      width: 50,
-                      height: 50,
-                      borderRadius: 6,
-                      objectFit: 'cover',
-                      border: '1px solid var(--border-color)',
-                    }}
+                    className="w-12 h-12 rounded-lg object-cover border border-slate-200"
                     onError={(e) => {
                       e.target.style.display = 'none';
                     }}
                   />
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Image preview</span>
+                  <span className="text-xs text-slate-500 font-medium">Image preview</span>
                 </div>
               )}
             </div>
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="prod-desc">
-                Description <span className="req">*</span>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5" htmlFor="prod-desc">
+                Description <span className="text-rose-500">*</span>
               </label>
               <textarea
                 id="prod-desc"
                 name="description"
                 rows="4"
-                className="form-control"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors resize-y"
                 placeholder="Detailed information about product specifications, materials, and features..."
                 value={formData.description}
                 onChange={handleChange}
@@ -282,36 +290,34 @@ export default function ProductFormModal({ isOpen, onClose, onSuccess, productTo
               />
             </div>
 
-            <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
+            <div className="flex items-center gap-2.5 pt-1">
               <input
                 id="prod-is-active"
                 name="isActive"
                 type="checkbox"
                 checked={formData.isActive}
                 onChange={handleChange}
-                style={{ width: 18, height: 18, cursor: 'pointer' }}
+                className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer"
               />
-              <label htmlFor="prod-is-active" style={{ fontSize: '0.9rem', fontWeight: 500, cursor: 'pointer', margin: 0, color: 'var(--text-primary)' }}>
+              <label htmlFor="prod-is-active" className="text-xs font-medium text-slate-700 cursor-pointer select-none">
                 Product is Active and visible to customers
               </label>
             </div>
           </div>
 
-          <div className="modal-footer">
+          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-200 bg-slate-50 shrink-0">
             <button
               type="button"
-              className="btn-card-action"
+              className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 text-xs font-semibold cursor-pointer transition-colors"
               onClick={onClose}
               disabled={submitting}
-              style={{ maxWidth: 100 }}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="btn-card-action btn-card-primary"
+              className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-semibold cursor-pointer transition-colors shadow-xs disabled:opacity-50"
               disabled={submitting}
-              style={{ maxWidth: 160 }}
             >
               {submitting ? 'Saving...' : isEditing ? 'Update Product' : 'Create Product'}
             </button>

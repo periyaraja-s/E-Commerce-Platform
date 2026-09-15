@@ -37,29 +37,29 @@ export default function ProductQuickViewModal({ product, onClose }) {
   };
 
   return (
-    <div className="quickview-modal-backdrop" onClick={onClose}>
+    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 overflow-y-auto" onClick={onClose}>
       <div
-        className="quickview-modal-content"
+        className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-auto"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
       >
         <button
           type="button"
-          className="quickview-modal-close"
+          className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors cursor-pointer text-lg leading-none"
           onClick={onClose}
           aria-label="Close modal"
         >
           &times;
         </button>
 
-        <div className="quickview-modal-grid">
+        <div className="grid grid-cols-1 md:grid-cols-2">
           {/* Gallery / Image */}
-          <div className="quickview-image-pane">
+          <div className="aspect-square md:aspect-auto w-full bg-slate-100 flex items-center justify-center overflow-hidden">
             <img
               src={imageUrl}
               alt={product.name}
-              className="quickview-img"
+              className="w-full h-full object-cover"
               onError={(e) => {
                 e.target.src = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80';
               }}
@@ -67,46 +67,58 @@ export default function ProductQuickViewModal({ product, onClose }) {
           </div>
 
           {/* Details */}
-          <div className="quickview-details-pane">
-            <div className="quickview-meta-badges">
-              <span className="badge-category-chip">{categoryName}</span>
-              <span className={`badge-stock-chip ${isOutOfStock ? 'out' : 'in'}`}>
-                {isOutOfStock ? 'Out of Stock' : `${product.stock} units available`}
-              </span>
-            </div>
-
-            <h2 className="quickview-title">{product.name}</h2>
-
-            <div className="quickview-price-tag">
-              ${Number(product.price).toFixed(2)}
-            </div>
-
-            <p className="quickview-description">
-              {product.description || 'Crafted with premium materials and engineered for longevity.'}
-            </p>
-
-            {/* Inventory Meta */}
-            <div className="quickview-specs-box">
-              <div className="spec-item">
-                <span className="spec-label">Product ID:</span>
-                <span className="spec-val">{product.slug || product._id}</span>
+          <div className="p-6 sm:p-8 flex flex-col justify-between gap-5">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-700">
+                  {categoryName}
+                </span>
+                <span
+                  className={`px-2.5 py-1 rounded-md text-xs font-semibold ${
+                    isOutOfStock
+                      ? 'bg-rose-100 text-rose-700'
+                      : 'bg-emerald-100 text-emerald-800'
+                  }`}
+                >
+                  {isOutOfStock ? 'Out of Stock' : `${product.stock} units available`}
+                </span>
               </div>
-              <div className="spec-item">
-                <span className="spec-label">Shipping:</span>
-                <span className="spec-val">Free on orders over $50</span>
+
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+                {product.name}
+              </h2>
+
+              <div className="text-2xl font-extrabold text-blue-600">
+                ${Number(product.price).toFixed(2)}
               </div>
-              <div className="spec-item">
-                <span className="spec-label">Warranty:</span>
-                <span className="spec-val">1-Year Standard Guarantee</span>
+
+              <p className="text-sm text-slate-600 leading-relaxed">
+                {product.description || 'Crafted with premium materials and engineered for longevity.'}
+              </p>
+
+              {/* Inventory Meta */}
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2 text-xs">
+                <div className="flex items-center justify-between text-slate-600">
+                  <span className="text-slate-400 font-medium">Product ID:</span>
+                  <span className="font-mono">{product.slug || product._id}</span>
+                </div>
+                <div className="flex items-center justify-between text-slate-600">
+                  <span className="text-slate-400 font-medium">Shipping:</span>
+                  <span>Free on orders over $50</span>
+                </div>
+                <div className="flex items-center justify-between text-slate-600">
+                  <span className="text-slate-400 font-medium">Guarantee:</span>
+                  <span>1-Year Standard Guarantee</span>
+                </div>
               </div>
             </div>
 
             {/* Action buttons */}
             {isAdmin ? (
-              <div className="quickview-actions-row">
+              <div className="pt-2">
                 <button
                   type="button"
-                  className="btn-quickview-cart"
+                  className="w-full py-2.5 px-4 rounded-xl text-sm font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 flex items-center justify-center gap-2 transition-colors cursor-pointer"
                   onClick={() => {
                     onClose();
                     navigate(`/products/${product._id || product.id}`);
@@ -120,20 +132,22 @@ export default function ProductQuickViewModal({ product, onClose }) {
                 </button>
               </div>
             ) : (
-              <div className="quickview-actions-row">
+              <div className="flex items-center gap-3 pt-2">
                 {!isOutOfStock && (
-                  <div className="quantity-stepper">
+                  <div className="flex items-center border border-slate-300 rounded-xl overflow-hidden shrink-0">
                     <button
                       type="button"
+                      className="w-9 h-10 flex items-center justify-center text-slate-500 hover:bg-slate-100 disabled:opacity-40 cursor-pointer font-bold"
                       onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                       disabled={quantity <= 1}
                       aria-label="Decrease quantity"
                     >
                       -
                     </button>
-                    <span className="quantity-val">{quantity}</span>
+                    <span className="w-9 text-center text-sm font-bold text-slate-800">{quantity}</span>
                     <button
                       type="button"
+                      className="w-9 h-10 flex items-center justify-center text-slate-500 hover:bg-slate-100 disabled:opacity-40 cursor-pointer font-bold"
                       onClick={() => setQuantity((q) => Math.min(maxStock, q + 1))}
                       disabled={quantity >= maxStock}
                       aria-label="Increase quantity"
@@ -145,7 +159,13 @@ export default function ProductQuickViewModal({ product, onClose }) {
 
                 <button
                   type="button"
-                  className={`btn-quickview-cart ${added ? 'added' : ''}`}
+                  className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs ${
+                    isOutOfStock
+                      ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                      : added
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white'
+                  }`}
                   disabled={isOutOfStock}
                   onClick={handleAddToCart}
                 >

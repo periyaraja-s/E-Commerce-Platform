@@ -27,18 +27,21 @@ export default function Cart() {
   // Admin access guard
   if (user?.role === 'admin') {
     return (
-      <div className="cart-page-container">
-        <div className="products-empty-state" style={{ marginTop: 40 }}>
-          <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#eff6ff', color: 'var(--accent-color)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 w-full">
+        <div className="max-w-md mx-auto text-center bg-white p-8 rounded-3xl border border-slate-200 shadow-xs">
+          <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-4">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
             </svg>
           </div>
-          <h3 className="empty-state-title">Admin Role Restriction</h3>
-          <p className="empty-state-desc">
+          <h3 className="text-lg font-bold text-slate-900">Admin Role Restriction</h3>
+          <p className="text-xs sm:text-sm text-slate-500 mt-2 leading-relaxed">
             Administrator accounts are restricted from consumer shopping carts and checkout operations. Please utilize the inventory management table and admin dashboard to manage products and store orders.
           </p>
-          <Link to="/products" className="btn-empty-reset" style={{ textDecoration: 'none', display: 'inline-block', marginTop: 12 }}>
+          <Link
+            to="/products"
+            className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold no-underline transition-colors shadow-xs"
+          >
             Manage Inventory Table &rarr;
           </Link>
         </div>
@@ -47,10 +50,10 @@ export default function Cart() {
   }
 
   return (
-    <div className="cart-page-container">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
       {/* Inline Toast Banner if present */}
       {toast && (
-        <div className={`global-toast-notification ${toast.type || 'success'}`} style={{ position: 'relative', top: 0, left: 0, transform: 'none', marginBottom: 16 }}>
+        <div className="mb-6 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-medium flex items-center gap-2 shadow-xs">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <polyline points="20 6 9 17 4 12" />
           </svg>
@@ -59,45 +62,30 @@ export default function Cart() {
       )}
 
       {/* Cart Page Header */}
-      <div className="page-header-block">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-          <div>
-            <h1 className="page-title">Shopping Cart</h1>
-            <p className="page-subtitle">
-              {user ? `Welcome back, ${user.name}. Your cart items are saved to your account.` : 'Review items, adjust quantities, and proceed to checkout.'}
-            </p>
-          </div>
-          {items.length > 0 && !loading && (
-            <button
-              type="button"
-              className="btn-clear-cart"
-              onClick={clearCart}
-              disabled={actionLoading}
-              title="Remove all items from your cart"
-            >
-              Clear Cart
-            </button>
-          )}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Shopping Cart</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            {user ? `Welcome back, ${user.name}. Your cart items are saved to your account.` : 'Review items, adjust quantities, and proceed to checkout.'}
+          </p>
         </div>
+        {items.length > 0 && !loading && (
+          <button
+            type="button"
+            className="px-3.5 py-2 rounded-xl border border-rose-200 bg-rose-50/50 hover:bg-rose-100 text-rose-700 text-xs font-semibold cursor-pointer transition-colors self-start sm:self-auto disabled:opacity-50"
+            onClick={clearCart}
+            disabled={actionLoading}
+            title="Remove all items from your cart"
+          >
+            Clear Cart
+          </button>
+        )}
       </div>
 
       {/* Error state if server sync failed */}
       {cartError && (
-        <div
-          style={{
-            marginBottom: 20,
-            padding: '12px 16px',
-            backgroundColor: '#fef2f2',
-            border: '1px solid #fecaca',
-            borderRadius: 8,
-            color: '#991b1b',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 12,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className="mb-6 p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-800 flex items-center justify-between gap-3 text-sm shadow-xs">
+          <div className="flex items-center gap-2">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="10" />
               <line x1="12" y1="8" x2="12" y2="12" />
@@ -108,14 +96,7 @@ export default function Cart() {
           <button
             type="button"
             onClick={fetchCart}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#b91c1c',
-              fontWeight: 600,
-              textDecoration: 'underline',
-              cursor: 'pointer',
-            }}
+            className="text-rose-700 hover:text-rose-900 font-bold underline cursor-pointer bg-transparent border-0 text-xs"
           >
             Retry
           </button>
@@ -124,47 +105,53 @@ export default function Cart() {
 
       {/* Loading State */}
       {loading ? (
-        <div style={{ padding: '48px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, color: 'var(--text-secondary)' }}>
-          <svg className="spinner-icon" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color: 'var(--accent-color)' }}>
+        <div className="py-24 flex flex-col items-center justify-center gap-3 text-slate-500">
+          <svg className="w-8 h-8 text-blue-600 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <circle cx="12" cy="12" r="10" strokeDasharray="32" strokeDashoffset="12" />
           </svg>
-          <span style={{ fontSize: '0.95rem', fontWeight: 500 }}>Syncing shopping cart...</span>
+          <span className="text-sm font-medium">Syncing shopping cart...</span>
         </div>
       ) : items.length === 0 ? (
         /* Empty Cart State */
-        <div className="placeholder-empty-state">
-          <div className="empty-state-icon-box">
-            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <div className="py-16 text-center max-w-md mx-auto bg-white rounded-3xl border border-slate-200 p-8 shadow-xs">
+          <div className="w-14 h-14 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-4">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="9" cy="21" r="1" />
               <circle cx="20" cy="21" r="1" />
               <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
             </svg>
           </div>
-          <h2 className="empty-state-title">Your Cart is Currently Empty</h2>
-          <p className="empty-state-desc">
+          <h2 className="text-xl font-bold text-slate-900">Your Cart is Currently Empty</h2>
+          <p className="text-xs sm:text-sm text-slate-500 mt-2 mb-6">
             Explore our curated catalog of electronics, lifestyle essentials, and apparel.
           </p>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link to="/" className="btn-empty-cart-action">
+          <div className="flex gap-3 justify-center flex-wrap">
+            <Link
+              to="/"
+              className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold no-underline transition-colors shadow-xs"
+            >
               &larr; Browse Storefront
             </Link>
-            <Link to="/products" className="btn-empty-cart-action" style={{ background: '#f8fafc', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}>
+            <Link
+              to="/products"
+              className="px-5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold no-underline transition-colors shadow-xs"
+            >
               View All Products
             </Link>
           </div>
         </div>
       ) : (
         /* Active Cart Content */
-        <div className="cart-content-grid">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Cart Items Column */}
-          <div className="cart-items-column">
-            <div className="cart-items-card">
-              <div className="cart-items-header">
+          <div className="lg:col-span-8 space-y-4">
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
+              <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-500 uppercase tracking-wider">
                 <span>Products ({cartCount} {cartCount === 1 ? 'item' : 'items'})</span>
-                <span>Price</span>
+                <span className="hidden sm:inline">Price</span>
               </div>
 
-              <div className="cart-items-list">
+              <div className="divide-y divide-slate-100">
                 {items.map(({ product, quantity, itemSubtotal }) => {
                   if (!product) return null;
                   const pId = product._id || product.id;
@@ -178,59 +165,63 @@ export default function Cart() {
                       : 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80';
 
                   return (
-                    <div key={pId} className="cart-item-row">
-                      <div className="cart-item-image-col">
+                    <div key={pId} className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
+                      <div className="shrink-0">
                         <img
                           src={imageUrl}
                           alt={product.name}
-                          className="cart-item-thumb"
+                          className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover bg-slate-50 border border-slate-100"
                           onError={(e) => {
                             e.target.src = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80';
                           }}
                         />
                       </div>
 
-                      <div className="cart-item-info-col">
-                        <div className="cart-item-category">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-1">
                           {product.category?.name || 'Store Item'}
                         </div>
-                        <h3 className="cart-item-name">{product.name}</h3>
-                        <div className="cart-item-unit-price">
+                        <h3 className="text-base font-bold text-slate-900 truncate">{product.name}</h3>
+                        <div className="text-xs text-slate-500 mt-0.5">
                           ${itemPrice.toFixed(2)} each
                         </div>
 
                         {/* Stock indicator badge */}
-                        <div style={{ marginTop: 4, marginBottom: 8, fontSize: '0.8rem' }}>
+                        <div className="mt-2 text-xs">
                           {availableStock <= 5 ? (
-                            <span style={{ color: '#b45309', fontWeight: 600 }}>
+                            <span className="text-amber-700 font-semibold">
                               ⚠️ Only {availableStock} left in stock
                             </span>
                           ) : (
-                            <span style={{ color: '#059669', fontWeight: 500 }}>
+                            <span className="text-emerald-700 font-medium">
                               ✓ In Stock ({availableStock} available)
                             </span>
                           )}
                         </div>
 
                         {/* Quantity Stepper & Remove */}
-                        <div className="cart-item-controls">
-                          <div className="cart-quantity-stepper">
+                        <div className="mt-3 flex items-center gap-3">
+                          <div className="inline-flex items-center border border-slate-300 rounded-xl overflow-hidden bg-slate-50">
                             <button
                               type="button"
                               onClick={() => updateQuantity(pId, quantity - 1)}
                               disabled={actionLoading || quantity <= 1}
                               aria-label="Decrease quantity"
                               title={quantity <= 1 ? 'Minimum quantity is 1 (use Remove to delete)' : 'Decrease quantity'}
+                              className="w-8 h-8 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-colors font-bold text-sm cursor-pointer border-0 bg-transparent disabled:opacity-50"
                             >
                               -
                             </button>
-                            <span className="cart-quantity-num">{quantity}</span>
+                            <span className="w-8 h-8 flex items-center justify-center font-bold text-xs text-slate-900">
+                              {quantity}
+                            </span>
                             <button
                               type="button"
                               onClick={() => updateQuantity(pId, quantity + 1)}
                               disabled={actionLoading || isMaxStockReached}
                               aria-label="Increase quantity"
                               title={isMaxStockReached ? `Maximum available stock (${availableStock}) reached` : 'Increase quantity'}
+                              className="w-8 h-8 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-colors font-bold text-sm cursor-pointer border-0 bg-transparent disabled:opacity-50"
                             >
                               +
                             </button>
@@ -238,7 +229,7 @@ export default function Cart() {
 
                           <button
                             type="button"
-                            className="cart-btn-remove"
+                            className="text-xs font-semibold text-rose-600 hover:text-rose-800 transition-colors cursor-pointer bg-transparent border-0 p-1"
                             onClick={() => removeFromCart(pId)}
                             disabled={actionLoading}
                           >
@@ -247,8 +238,9 @@ export default function Cart() {
                         </div>
                       </div>
 
-                      <div className="cart-item-subtotal-col">
-                        <span className="cart-item-subtotal">
+                      <div className="sm:text-right shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 flex sm:flex-col justify-between items-center sm:items-end">
+                        <span className="text-xs text-slate-400 sm:hidden">Total</span>
+                        <span className="font-extrabold text-slate-900 text-base sm:text-lg">
                           ${computedSubtotal.toFixed(2)}
                         </span>
                       </div>
@@ -258,69 +250,71 @@ export default function Cart() {
               </div>
             </div>
 
-            <div style={{ marginTop: 16 }}>
-              <Link to="/" className="btn-continue-shopping-link">
+            <div className="pt-2">
+              <Link to="/" className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors no-underline inline-flex items-center gap-1.5">
                 &larr; Continue Shopping
               </Link>
             </div>
           </div>
 
           {/* Order Summary Sidebar */}
-          <div className="cart-summary-column">
-            <div className="cart-summary-card">
-              <h2 className="summary-title">Order Summary</h2>
+          <div className="lg:col-span-4 sticky top-24">
+            <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs">
+              <h2 className="text-lg font-bold text-slate-900 mb-6">Order Summary</h2>
 
-              <div className="summary-rows">
-                <div className="summary-row">
+              <div className="space-y-3.5 text-sm text-slate-600">
+                <div className="flex items-center justify-between">
                   <span>Subtotal ({cartCount} {cartCount === 1 ? 'item' : 'items'})</span>
-                  <span>${cartSubtotal.toFixed(2)}</span>
+                  <span className="font-semibold text-slate-900">${cartSubtotal.toFixed(2)}</span>
                 </div>
 
-                <div className="summary-row">
-                  <span>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
                     Shipping
-                    {shipping === 0 && <span className="free-shipping-tag">FREE</span>}
+                    {shipping === 0 && (
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-extrabold">
+                        FREE
+                      </span>
+                    )}
                   </span>
-                  <span>{shipping === 0 ? '$0.00' : `$${shipping.toFixed(2)}`}</span>
+                  <span className="font-semibold text-slate-900">{shipping === 0 ? '$0.00' : `$${shipping.toFixed(2)}`}</span>
                 </div>
 
-                <div className="summary-row">
+                <div className="flex items-center justify-between">
                   <span>Estimated Tax (8%)</span>
-                  <span>${tax.toFixed(2)}</span>
+                  <span className="font-semibold text-slate-900">${tax.toFixed(2)}</span>
                 </div>
 
                 {cartSubtotal < 50 && (
-                  <div className="shipping-progress-notice">
+                  <div className="p-3 rounded-xl bg-blue-50 border border-blue-100 text-blue-800 text-xs font-medium">
                     Add ${(50 - cartSubtotal).toFixed(2)} more to qualify for <strong>FREE shipping</strong>!
                   </div>
                 )}
 
-                <div className="summary-divider" />
-
-                <div className="summary-row total">
+                <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-base font-extrabold text-slate-900">
                   <span>Estimated Total</span>
-                  <span className="summary-total-val">${grandTotal.toFixed(2)}</span>
+                  <span className="text-xl text-blue-600">${grandTotal.toFixed(2)}</span>
                 </div>
               </div>
 
               <button
                 type="button"
-                className="btn-checkout-primary"
+                className="w-full mt-6 py-3.5 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-sm cursor-pointer shadow-xs transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                 onClick={() => navigate('/checkout')}
                 disabled={actionLoading || items.length === 0}
               >
                 Proceed to Checkout &rarr;
               </button>
 
-              <div className="summary-guarantees">
-                <div className="guarantee-item">
+              <div className="mt-6 pt-6 border-t border-slate-100 space-y-2.5 text-xs text-slate-500">
+                <div className="flex items-center gap-2">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                     <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                   </svg>
                   <span>Bank-grade 256-bit encrypted checkout</span>
                 </div>
-                <div className="guarantee-item">
+                <div className="flex items-center gap-2">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <polyline points="20 6 9 17 4 12" />
                   </svg>

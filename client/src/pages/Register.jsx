@@ -97,11 +97,11 @@ export default function Register() {
   };
 
   return (
-    <div className="auth-page-wrapper">
-      <div className="auth-card">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 sm:p-6 py-12">
+      <div className="w-full max-w-md bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
         {/* Brand Header */}
-        <div className="auth-brand-header">
-          <div className="auth-brand-icon">
+        <div className="text-center space-y-2">
+          <div className="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center mx-auto shadow-xs">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
               <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
               <circle cx="8.5" cy="7" r="4" />
@@ -109,46 +109,46 @@ export default function Register() {
               <line x1="23" y1="11" x2="17" y2="11" />
             </svg>
           </div>
-          <h1 className="auth-title">Create Account</h1>
-          <p className="auth-subtitle">Join us to browse catalog, cart, and track orders</p>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Create Account</h1>
+          <p className="text-sm text-slate-500">Join us to browse catalog, cart, and track orders</p>
         </div>
 
         {/* Intended Action Notice Banner */}
         {intendedAction === 'add-to-cart' && intendedProduct && (
-          <div className="auth-intended-action-banner">
-            <div className="intended-action-icon">🛍️</div>
-            <div className="intended-action-text">
-              <strong>Complete registration to add to cart:</strong>
-              <div className="intended-item-name">{intendedProduct.name} &bull; ${Number(intendedProduct.price).toFixed(2)}</div>
+          <div className="flex items-center gap-3 p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-sm">
+            <span className="text-xl">🛍️</span>
+            <div className="text-xs">
+              <strong className="block font-semibold">Complete registration to add to cart:</strong>
+              <div className="text-amber-800">{intendedProduct.name} &bull; ${Number(intendedProduct.price).toFixed(2)}</div>
             </div>
           </div>
         )}
 
         {/* Role Notice Affirmation */}
-        <div className="auth-role-notice">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0, marginTop: 1 }}>
+        <div className="p-3.5 rounded-xl bg-blue-50/70 border border-blue-200/80 text-blue-900 text-xs flex items-start gap-2.5">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 mt-0.5 text-blue-600">
             <circle cx="12" cy="12" r="10" />
             <line x1="12" y1="16" x2="12" y2="12" />
             <line x1="12" y1="8" x2="12.01" y2="8" />
           </svg>
           <div>
-            <strong>Customer Registration:</strong> All public accounts are created with verified customer access. Administrative roles are provisioned securely via system seeding.
+            <strong className="font-semibold text-blue-900">Customer Registration:</strong> All public accounts are created with verified customer access. Administrative roles are provisioned securely via system seeding.
           </div>
         </div>
 
         {/* API Error Banner */}
         {apiError && (
-          <div className="form-error-banner" style={{ marginBottom: 18, display: 'flex', alignItems: 'center', gap: 10 }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" style={{ flexShrink: 0 }}>
+          <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-start gap-2.5">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="shrink-0 mt-0.5">
               <circle cx="12" cy="12" r="10" />
               <line x1="12" y1="8" x2="12" y2="12" />
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
-            <div style={{ flex: 1, fontSize: '0.86rem' }}>{apiError}</div>
+            <div className="flex-1 text-xs">{apiError}</div>
             <button
               type="button"
               onClick={() => setApiError('')}
-              style={{ background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer' }}
+              className="text-red-500 hover:text-red-700 cursor-pointer text-lg leading-none"
               aria-label="Dismiss error"
             >
               &times;
@@ -157,14 +157,14 @@ export default function Register() {
         )}
 
         {/* Registration Form */}
-        <form className="auth-form" onSubmit={handleSubmit} noValidate>
+        <form className="space-y-4" onSubmit={handleSubmit} noValidate>
           {/* Full Name */}
-          <div className="form-group">
-            <label className="form-label" htmlFor="register-name">
-              Full Name <span className="req">*</span>
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-slate-700" htmlFor="register-name">
+              Full Name <span className="text-red-500">*</span>
             </label>
-            <div className="input-with-icon-wrapper">
-              <span className="input-icon-left">
+            <div className="relative flex items-center">
+              <span className="absolute left-3 text-slate-400">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                   <circle cx="12" cy="7" r="4" />
@@ -173,7 +173,11 @@ export default function Register() {
               <input
                 id="register-name"
                 type="text"
-                className={`form-control-iconic ${errors.name ? 'has-error' : ''}`}
+                className={`w-full pl-9 pr-3 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 transition-all ${
+                  errors.name
+                    ? 'border-red-300 focus:ring-red-400 bg-red-50/20'
+                    : 'border-slate-300 focus:ring-blue-500 focus:border-blue-500 bg-white'
+                }`}
                 placeholder="Jane Doe"
                 value={form.name}
                 onChange={(e) => handleChange('name', e.target.value)}
@@ -182,16 +186,16 @@ export default function Register() {
                 autoFocus
               />
             </div>
-            {errors.name && <span className="form-field-error-text">{errors.name}</span>}
+            {errors.name && <p className="text-xs text-red-500 font-medium">{errors.name}</p>}
           </div>
 
           {/* Email Address */}
-          <div className="form-group">
-            <label className="form-label" htmlFor="register-email">
-              Email Address <span className="req">*</span>
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-slate-700" htmlFor="register-email">
+              Email Address <span className="text-red-500">*</span>
             </label>
-            <div className="input-with-icon-wrapper">
-              <span className="input-icon-left">
+            <div className="relative flex items-center">
+              <span className="absolute left-3 text-slate-400">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
                   <polyline points="22,6 12,13 2,6" />
@@ -200,7 +204,11 @@ export default function Register() {
               <input
                 id="register-email"
                 type="email"
-                className={`form-control-iconic ${errors.email ? 'has-error' : ''}`}
+                className={`w-full pl-9 pr-3 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 transition-all ${
+                  errors.email
+                    ? 'border-red-300 focus:ring-red-400 bg-red-50/20'
+                    : 'border-slate-300 focus:ring-blue-500 focus:border-blue-500 bg-white'
+                }`}
                 placeholder="name@example.com"
                 value={form.email}
                 onChange={(e) => handleChange('email', e.target.value)}
@@ -208,16 +216,16 @@ export default function Register() {
                 autoComplete="email"
               />
             </div>
-            {errors.email && <span className="form-field-error-text">{errors.email}</span>}
+            {errors.email && <p className="text-xs text-red-500 font-medium">{errors.email}</p>}
           </div>
 
           {/* Password */}
-          <div className="form-group">
-            <label className="form-label" htmlFor="register-password">
-              Password <span className="req">*</span> (8+ characters)
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-slate-700" htmlFor="register-password">
+              Password <span className="text-red-500">*</span> (8+ characters)
             </label>
-            <div className="input-with-icon-wrapper">
-              <span className="input-icon-left">
+            <div className="relative flex items-center">
+              <span className="absolute left-3 text-slate-400">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                   <path d="M7 11V7a5 5 0 0 1 10 0v4" />
@@ -226,7 +234,11 @@ export default function Register() {
               <input
                 id="register-password"
                 type={showPassword ? 'text' : 'password'}
-                className={`form-control-iconic ${errors.password ? 'has-error' : ''}`}
+                className={`w-full pl-9 pr-10 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 transition-all ${
+                  errors.password
+                    ? 'border-red-300 focus:ring-red-400 bg-red-50/20'
+                    : 'border-slate-300 focus:ring-blue-500 focus:border-blue-500 bg-white'
+                }`}
                 placeholder="Create a strong password"
                 value={form.password}
                 onChange={(e) => handleChange('password', e.target.value)}
@@ -235,7 +247,7 @@ export default function Register() {
               />
               <button
                 type="button"
-                className="password-toggle-btn"
+                className="absolute right-3 text-slate-400 hover:text-slate-600 cursor-pointer"
                 onClick={() => setShowPassword(!showPassword)}
                 tabIndex="-1"
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
@@ -253,16 +265,16 @@ export default function Register() {
                 )}
               </button>
             </div>
-            {errors.password && <span className="form-field-error-text">{errors.password}</span>}
+            {errors.password && <p className="text-xs text-red-500 font-medium">{errors.password}</p>}
           </div>
 
           {/* Confirm Password */}
-          <div className="form-group">
-            <label className="form-label" htmlFor="register-confirm-password">
-              Confirm Password <span className="req">*</span>
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-slate-700" htmlFor="register-confirm-password">
+              Confirm Password <span className="text-red-500">*</span>
             </label>
-            <div className="input-with-icon-wrapper">
-              <span className="input-icon-left">
+            <div className="relative flex items-center">
+              <span className="absolute left-3 text-slate-400">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                 </svg>
@@ -270,7 +282,11 @@ export default function Register() {
               <input
                 id="register-confirm-password"
                 type={showPassword ? 'text' : 'password'}
-                className={`form-control-iconic ${errors.confirmPassword ? 'has-error' : ''}`}
+                className={`w-full pl-9 pr-3 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 transition-all ${
+                  errors.confirmPassword
+                    ? 'border-red-300 focus:ring-red-400 bg-red-50/20'
+                    : 'border-slate-300 focus:ring-blue-500 focus:border-blue-500 bg-white'
+                }`}
                 placeholder="Re-enter your password"
                 value={form.confirmPassword}
                 onChange={(e) => handleChange('confirmPassword', e.target.value)}
@@ -278,14 +294,18 @@ export default function Register() {
                 autoComplete="new-password"
               />
             </div>
-            {errors.confirmPassword && <span className="form-field-error-text">{errors.confirmPassword}</span>}
+            {errors.confirmPassword && <p className="text-xs text-red-500 font-medium">{errors.confirmPassword}</p>}
           </div>
 
           {/* Submit Button */}
-          <button type="submit" className="btn-auth-submit" disabled={submitting}>
+          <button
+            type="submit"
+            className="w-full py-2.5 px-4 rounded-xl font-semibold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-60 transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer text-sm"
+            disabled={submitting}
+          >
             {submitting ? (
               <>
-                <svg className="spinner-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <circle cx="12" cy="12" r="10" strokeDasharray="32" strokeDashoffset="12" />
                 </svg>
                 <span>Creating Account...</span>
@@ -297,15 +317,15 @@ export default function Register() {
         </form>
 
         {/* Footer Navigation */}
-        <div className="auth-footer-nav">
+        <div className="text-center text-xs text-slate-500 pt-2 border-t border-slate-100">
           Already have an account?{' '}
-          <Link to="/login" state={location.state} className="auth-footer-link">
+          <Link to="/login" state={location.state} className="text-blue-600 font-semibold hover:underline no-underline">
             Sign In
           </Link>
         </div>
 
-        <div style={{ textAlign: 'center', marginTop: 14, paddingTop: 14, borderTop: '1px solid #f1f5f9' }}>
-          <Link to="/" style={{ fontSize: '0.84rem', color: '#64748b', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+        <div className="text-center pt-2">
+          <Link to="/" className="text-xs text-slate-500 hover:text-slate-800 transition-colors inline-flex items-center gap-1.5 no-underline">
             &larr; Back to Public Storefront
           </Link>
         </div>

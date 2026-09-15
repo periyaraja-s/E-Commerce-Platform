@@ -5,112 +5,116 @@ import PublicFooter from '../components/PublicFooter.jsx';
 
 export default function Returns() {
   return (
-    <div className="landing-page-root" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="min-h-screen flex flex-col bg-slate-50">
       <PublicHeader />
 
-      <main style={{ flex: 1, backgroundColor: 'var(--bg-app)', padding: '48px 24px' }}>
-        <div style={{ maxWidth: 860, margin: '0 auto' }}>
-          {/* Breadcrumb */}
-          <nav style={{ marginBottom: 24, fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
-            <Link to="/" style={{ color: 'var(--accent-color)', textDecoration: 'none' }}>Home</Link>
-            <span style={{ margin: '0 8px' }}>/</span>
-            <span>Returns &amp; Refunds</span>
-          </nav>
+      <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Breadcrumb */}
+        <nav className="mb-6 text-xs sm:text-sm text-slate-500 flex items-center gap-2">
+          <Link to="/" className="text-blue-600 hover:text-blue-700 transition-colors no-underline">Home</Link>
+          <span className="text-slate-300">/</span>
+          <span className="text-slate-800 font-medium">Returns &amp; Refunds</span>
+        </nav>
 
-          {/* Header */}
-          <div style={{ marginBottom: 40, borderBottom: '1px solid var(--border-color)', paddingBottom: 28 }}>
-            <h1 style={{ fontSize: '2.4rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em', marginBottom: 12 }}>
-              Return &amp; Refund Policy
-            </h1>
-            <p style={{ fontSize: '1.12rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-              We want you to be completely satisfied with your purchase. Enjoy our transparent, customer-first 30-day return policy.
+        {/* Header */}
+        <div className="mb-10 pb-8 border-b border-slate-200">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-3">
+            Return &amp; Refund Policy
+          </h1>
+          <p className="text-sm sm:text-base text-slate-500 leading-relaxed max-w-2xl">
+            We want you to be completely satisfied with your purchase. Enjoy our transparent, customer-first 30-day return policy.
+          </p>
+        </div>
+
+        {/* Steps highlight */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs">
+            <div className="text-2xl font-extrabold text-blue-600 mb-1">30 Days</div>
+            <div className="font-bold text-slate-900 text-sm mb-1">Standard Window</div>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Request a return within 30 days of shipment delivery date.
             </p>
           </div>
 
-          {/* Steps highlight */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 32 }}>
-            <div style={{ background: 'var(--bg-card)', padding: '20px', borderRadius: 10, border: '1px solid var(--border-color)' }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent-color)', marginBottom: 6 }}>30 Days</div>
-              <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>Standard Window</div>
-              <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)' }}>
-                Request a return within 30 days of shipment delivery date.
-              </p>
-            </div>
-
-            <div style={{ background: 'var(--bg-card)', padding: '20px', borderRadius: 10, border: '1px solid var(--border-color)' }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#10b981', marginBottom: 6 }}>100%</div>
-              <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>Full Product Refund</div>
-              <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)' }}>
-                Full refund issued back to your original payment method.
-              </p>
-            </div>
-
-            <div style={{ background: 'var(--bg-card)', padding: '20px', borderRadius: 10, border: '1px solid var(--border-color)' }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#7c3aed', marginBottom: 6 }}>3-5 Days</div>
-              <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>Inspection &amp; Payout</div>
-              <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)' }}>
-                Prompt warehouse inspection upon receiving return merchandise.
-              </p>
-            </div>
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs">
+            <div className="text-2xl font-extrabold text-emerald-600 mb-1">100%</div>
+            <div className="font-bold text-slate-900 text-sm mb-1">Full Product Refund</div>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Full refund issued back to your original payment method.
+            </p>
           </div>
 
-          {/* Policy Sections */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 28, lineHeight: 1.7, color: 'var(--text-secondary)' }}>
-            <section style={{ background: 'var(--bg-card)', padding: '28px', borderRadius: 12, border: '1px solid var(--border-color)' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 12 }}>
-                1. Eligibility for Returns
-              </h2>
-              <ul style={{ paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <li>Items must be received back in their original condition and packaging, including all accessories, manuals, and tags.</li>
-                <li>Items must show no signs of user-inflicted wear, cosmetic damage, or alteration.</li>
-                <li>Proof of purchase (Order ID or receipt) must accompany the return.</li>
-              </ul>
-            </section>
-
-            <section style={{ background: 'var(--bg-card)', padding: '28px', borderRadius: 12, border: '1px solid var(--border-color)' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 12 }}>
-                2. How to Initiate a Return
-              </h2>
-              <ol style={{ paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <li>
-                  Visit your{' '}
-                  <Link to="/orders" style={{ color: 'var(--accent-color)', fontWeight: 600 }}>
-                    Order History
-                  </Link>{' '}
-                  page and locate the order containing the items you wish to return.
-                </li>
-                <li>Contact our support team with your order ID and the reason for your return.</li>
-                <li>Print the prepaid return shipping label provided by our support team and affix it securely to the parcel.</li>
-                <li>Drop off the package at any authorized parcel courier collection point.</li>
-              </ol>
-            </section>
-
-            <section style={{ background: 'var(--bg-card)', padding: '28px', borderRadius: 12, border: '1px solid var(--border-color)' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 12 }}>
-                3. Damaged, Defective or Incorrect Items
-              </h2>
-              <p>
-                If you receive an item that is defective, damaged during transit, or different from what you ordered, please notify us within 48 hours of delivery. We will immediately arrange a priority replacement or full refund at no additional shipping cost to you.
-              </p>
-            </section>
-
-            <section style={{ background: 'var(--bg-card)', padding: '28px', borderRadius: 12, border: '1px solid var(--border-color)' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 12 }}>
-                4. Questions &amp; Support
-              </h2>
-              <p style={{ marginBottom: 16 }}>
-                Have questions about an existing return or need assistance with your order? Our support team is ready to assist you.
-              </p>
-              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                <Link to="/products" className="btn-card-action btn-card-primary" style={{ padding: '10px 20px', textDecoration: 'none' }}>
-                  Return to Storefront
-                </Link>
-                <Link to="/terms" className="btn-card-action" style={{ padding: '10px 20px', textDecoration: 'none' }}>
-                  Read Terms of Service
-                </Link>
-              </div>
-            </section>
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs">
+            <div className="text-2xl font-extrabold text-purple-600 mb-1">3-5 Days</div>
+            <div className="font-bold text-slate-900 text-sm mb-1">Inspection &amp; Payout</div>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Prompt warehouse inspection upon receiving return merchandise.
+            </p>
           </div>
+        </div>
+
+        {/* Policy Sections */}
+        <div className="space-y-6 text-slate-600 leading-relaxed text-sm">
+          <section className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs">
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 mb-3">
+              1. Eligibility for Returns
+            </h2>
+            <ul className="list-disc pl-5 space-y-2">
+              <li>Items must be received back in their original condition and packaging, including all accessories, manuals, and tags.</li>
+              <li>Items must show no signs of user-inflicted wear, cosmetic damage, or alteration.</li>
+              <li>Proof of purchase (Order ID or receipt) must accompany the return.</li>
+            </ul>
+          </section>
+
+          <section className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs">
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 mb-3">
+              2. How to Initiate a Return
+            </h2>
+            <ol className="list-decimal pl-5 space-y-2">
+              <li>
+                Visit your{' '}
+                <Link to="/orders" className="text-blue-600 font-semibold hover:underline">
+                  Order History
+                </Link>{' '}
+                page and locate the order containing the items you wish to return.
+              </li>
+              <li>Contact our support team with your order ID and the reason for your return.</li>
+              <li>Print the prepaid return shipping label provided by our support team and affix it securely to the parcel.</li>
+              <li>Drop off the package at any authorized parcel courier collection point.</li>
+            </ol>
+          </section>
+
+          <section className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs">
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 mb-3">
+              3. Damaged, Defective or Incorrect Items
+            </h2>
+            <p>
+              If you receive an item that is defective, damaged during transit, or different from what you ordered, please notify us within 48 hours of delivery. We will immediately arrange a priority replacement or full refund at no additional shipping cost to you.
+            </p>
+          </section>
+
+          <section className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs">
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 mb-3">
+              4. Questions &amp; Support
+            </h2>
+            <p className="mb-6">
+              Have questions about an existing return or need assistance with your order? Our support team is ready to assist you.
+            </p>
+            <div className="flex items-center gap-3 flex-wrap">
+              <Link
+                to="/products"
+                className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold transition-colors no-underline shadow-xs"
+              >
+                Return to Storefront
+              </Link>
+              <Link
+                to="/terms"
+                className="px-5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-semibold transition-colors no-underline shadow-xs"
+              >
+                Read Terms of Service
+              </Link>
+            </div>
+          </section>
         </div>
       </main>
 
