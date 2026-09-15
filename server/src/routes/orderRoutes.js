@@ -11,16 +11,20 @@ import {
   verifyRazorpayPaymentHandler,
   recordRazorpayPaymentFailureHandler,
   simulateRazorpayTestSignatureHandler,
+  handleRazorpayWebhook,
 } from '../controllers/orderController.js';
 
 const router = Router();
 
-// All order operations require authentication
-router.use(protect);
-
-// --- Razorpay Payment Gateway Routes (Must precede /:id) ---
+// --- Public / Gateway Webhook Routes (Must precede protect middleware) ---
 // Public-safe Razorpay gateway configuration
 router.get('/razorpay/config', getRazorpayConfigHandler);
+
+// Razorpay asynchronous payment webhook (Secured via cryptographic x-razorpay-signature header)
+router.post('/razorpay/webhook', handleRazorpayWebhook);
+
+// All subsequent customer & administrative order operations require authentication
+router.use(protect);
 
 // Admin-only Payment Settings
 router.get('/razorpay/admin-settings', authorize('admin'), getAdminPaymentSettingsHandler);

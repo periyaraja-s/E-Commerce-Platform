@@ -9,6 +9,7 @@ import {
   createRazorpayOrder,
   verifyRazorpaySignature,
   generateTestSignature,
+  verifyRazorpayWebhookSignature,
 } from '../services/razorpayService.js';
 
 // In-memory fallback storage for orders when MongoDB is not connected
@@ -291,14 +292,32 @@ export async function createOrder(req, res) {
         const tax = Math.round(computedSubtotal * 0.08 * 100) / 100;
         const grandTotal = Math.round((computedSubtotal + shippingFee + tax) * 100) / 100;
 
-        // Step D: Reduce product inventory stock atomically
+        // Step D: Reduce product inventory stock atomically with race-condition guard
+        const decrementedMongoItems = [];
         for (const item of verifiedOrderItems) {
-          const updateQuery = { $inc: { stock: -item.quantity } };
-          if (session) {
-            await Product.findByIdAndUpdate(item.product, updateQuery, { session });
-          } else {
-            await Product.findByIdAndUpdate(item.product, updateQuery);
+          const updatedProduct = session
+            ? await Product.findOneAndUpdate(
+                { _id: item.product, stock: { $gte: item.quantity } },
+                { $inc: { stock: -item.quantity } },
+                { session, new: true }
+              )
+            : await Product.findOneAndUpdate(
+                { _id: item.product, stock: { $gte: item.quantity } },
+                { $inc: { stock: -item.quantity } },
+                { new: true }
+              );
+
+          if (!updatedProduct) {
+            if (!session) {
+              for (const dec of decrementedMongoItems) {
+                await Product.findByIdAndUpdate(dec.product, { $inc: { stock: dec.quantity } }).catch(() => {});
+              }
+            }
+            const stockErr = new Error(`Insufficient stock for "${item.name}". Required: ${item.quantity}.`);
+            stockErr.statusCode = 400;
+            throw stockErr;
           }
+          decrementedMongoItems.push(item);
         }
 
         // Step E: Generate unique human-readable order number
@@ -419,12 +438,22 @@ export async function createOrder(req, res) {
       });
     }
 
-    // Decrement stock for all items
+    // Decrement stock for all items atomically with rollback on failure
+    const decrementedMemItems = [];
     for (const item of verifiedOrderItems) {
       const p = getMemoryProductById(item.product);
-      if (p) {
-        p.stock = Math.max(0, p.stock - item.quantity);
+      if (!p || p.stock < item.quantity) {
+        for (const dec of decrementedMemItems) {
+          const rollbackP = getMemoryProductById(dec.product);
+          if (rollbackP) rollbackP.stock += dec.quantity;
+        }
+        return res.status(400).json({
+          success: false,
+          message: `Insufficient stock for "${item.name}". Required: ${item.quantity}.`,
+        });
       }
+      p.stock = Math.max(0, p.stock - item.quantity);
+      decrementedMemItems.push(item);
     }
 
     computedSubtotal = Math.round(computedSubtotal * 100) / 100;
@@ -732,8 +761,13 @@ export async function updateOrderStatus(req, res) {
         });
       }
 
-      // If updating to cancelled from a non-cancelled state, restore product stock
-      if (status === 'cancelled' && order.status !== 'cancelled') {
+      // If updating to cancelled from a non-cancelled state, restore product stock ONLY IF stock was previously decremented
+      const hadStockDecremented =
+        order.status !== 'pending' ||
+        order.paymentStatus === 'paid' ||
+        order.paymentMethod === 'cash_on_delivery';
+
+      if (status === 'cancelled' && order.status !== 'cancelled' && hadStockDecremented) {
         for (const item of order.items) {
           if (item.product) {
             await Product.findByIdAndUpdate(item.product, { $inc: { stock: item.quantity } });
@@ -783,7 +817,12 @@ export async function updateOrderStatus(req, res) {
       });
     }
 
-    if (status === 'cancelled' && order.status !== 'cancelled') {
+    const hadMemStockDecremented =
+      order.status !== 'pending' ||
+      order.paymentStatus === 'paid' ||
+      order.paymentMethod === 'cash_on_delivery';
+
+    if (status === 'cancelled' && order.status !== 'cancelled' && hadMemStockDecremented) {
       for (const item of order.items) {
         const p = getMemoryProductById(item.product);
         if (p) p.stock += item.quantity;
@@ -1015,6 +1054,22 @@ export async function createRazorpayOrderHandler(req, res) {
         },
       });
 
+      // Clean up previous uncompleted pending Razorpay orders from this user to prevent dangling zombie orders
+      await Order.updateMany(
+        {
+          user: userId,
+          paymentMethod: 'razorpay',
+          status: 'pending',
+          paymentStatus: 'pending',
+        },
+        {
+          $set: {
+            status: 'cancelled',
+            notes: 'Superceded by newer checkout attempt',
+          },
+        }
+      ).catch(() => {});
+
       // Step E: Create pending order record in MongoDB
       const newOrder = new Order({
         orderNumber,
@@ -1113,6 +1168,20 @@ export async function createRazorpayOrderHandler(req, res) {
       currency: 'INR',
       receipt: orderNumber,
       notes: { orderNumber, customerName: cleanedAddress.name },
+    });
+
+    // Clean up previous uncompleted pending Razorpay orders from this user in memory
+    memoryOrders.forEach((o) => {
+      const oUserId = o.user?._id || o.user?.id || o.user;
+      if (
+        oUserId?.toString() === userId.toString() &&
+        o.paymentMethod === 'razorpay' &&
+        o.status === 'pending' &&
+        o.paymentStatus === 'pending'
+      ) {
+        o.status = 'cancelled';
+        o.notes = (o.notes ? o.notes + ' | ' : '') + 'Superceded by newer checkout attempt';
+      }
     });
 
     const newMemoryOrder = {
@@ -1226,7 +1295,7 @@ export async function verifyRazorpayPaymentHandler(req, res) {
         });
       }
 
-      // If already paid, return existing order
+      // If already paid, return existing order (idempotency check)
       if (order.paymentStatus === 'paid') {
         return res.json({
           success: true,
@@ -1237,39 +1306,69 @@ export async function verifyRazorpayPaymentHandler(req, res) {
 
       // Signature is valid: Execute payment, order, and stock updates in database transaction
       await executeWithTransaction(async (session) => {
-        // Decrement product inventory stock atomically with stock check
-        for (const item of order.items) {
-          const product = session
-            ? await Product.findById(item.product).session(session)
-            : await Product.findById(item.product);
+        // Concurrency guard: Atomically lock order transition so duplicate concurrent requests cannot pass
+        const transitionOrder = session
+          ? await Order.findOneAndUpdate(
+              { _id: order._id, paymentStatus: { $ne: 'paid' } },
+              {
+                $set: {
+                  status: 'confirmed',
+                  paymentStatus: 'paid',
+                  razorpayPaymentId: razorpay_payment_id,
+                  razorpaySignature: razorpay_signature,
+                  paidAt: new Date(),
+                },
+              },
+              { session, new: true }
+            )
+          : await Order.findOneAndUpdate(
+              { _id: order._id, paymentStatus: { $ne: 'paid' } },
+              {
+                $set: {
+                  status: 'confirmed',
+                  paymentStatus: 'paid',
+                  razorpayPaymentId: razorpay_payment_id,
+                  razorpaySignature: razorpay_signature,
+                  paidAt: new Date(),
+                },
+              },
+              { new: true }
+            );
 
-          if (!product || product.stock < item.quantity) {
+        if (!transitionOrder) {
+          // Another concurrent request already verified and finalized this order
+          return;
+        }
+
+        // Decrement product inventory stock atomically with stock guard
+        const decrementedMongoItems = [];
+        for (const item of order.items) {
+          const updatedProduct = session
+            ? await Product.findOneAndUpdate(
+                { _id: item.product, stock: { $gte: item.quantity } },
+                { $inc: { stock: -item.quantity } },
+                { session, new: true }
+              )
+            : await Product.findOneAndUpdate(
+                { _id: item.product, stock: { $gte: item.quantity } },
+                { $inc: { stock: -item.quantity } },
+                { new: true }
+              );
+
+          if (!updatedProduct) {
+            if (!session) {
+              for (const dec of decrementedMongoItems) {
+                await Product.findByIdAndUpdate(dec.product, { $inc: { stock: dec.quantity } }).catch(() => {});
+              }
+              await Order.findByIdAndUpdate(order._id, { $set: { status: 'pending', paymentStatus: 'pending' } }).catch(() => {});
+            }
             const stockErr = new Error(
-              `Insufficient stock for "${item.name}". Required: ${item.quantity}, available: ${product?.stock ?? 0}.`
+              `Insufficient stock for "${item.name}". Required: ${item.quantity}.`
             );
             stockErr.statusCode = 400;
             throw stockErr;
           }
-
-          const updateQuery = { $inc: { stock: -item.quantity } };
-          if (session) {
-            await Product.findByIdAndUpdate(item.product, updateQuery, { session });
-          } else {
-            await Product.findByIdAndUpdate(item.product, updateQuery);
-          }
-        }
-
-        // Update order status & payment details
-        order.status = 'confirmed';
-        order.paymentStatus = 'paid';
-        order.razorpayPaymentId = razorpay_payment_id;
-        order.razorpaySignature = razorpay_signature;
-        order.paidAt = new Date();
-
-        if (session) {
-          await order.save({ session });
-        } else {
-          await order.save();
+          decrementedMongoItems.push(item);
         }
 
         // Persist OrderItem records
@@ -1286,19 +1385,19 @@ export async function verifyRazorpayPaymentHandler(req, res) {
         if (session) {
           await OrderItem.insertMany(orderItemDocs, { session }).catch(() => {});
           // Clear customer's shopping cart
-          await Cart.findOneAndUpdate({ user: userId }, { items: [] }, { session });
+          await Cart.findOneAndUpdate({ user: userId }, { items: [] }, { session }).catch(() => {});
         } else {
           await OrderItem.insertMany(orderItemDocs).catch(() => {});
-          await Cart.findOneAndUpdate({ user: userId }, { items: [] });
+          await Cart.findOneAndUpdate({ user: userId }, { items: [] }).catch(() => {});
         }
       });
 
-      await order.populate('user', 'name email');
+      const finalizedOrder = await Order.findById(order._id).populate('user', 'name email');
 
       return res.json({
         success: true,
-        message: `Payment of $${order.total.toFixed(2)} verified successfully! Order reference: ${order.orderNumber}`,
-        data: order,
+        message: `Payment of $${(finalizedOrder?.total || order.total).toFixed(2)} verified successfully! Order reference: ${order.orderNumber}`,
+        data: finalizedOrder || order,
       });
     }
 
@@ -1342,33 +1441,49 @@ export async function verifyRazorpayPaymentHandler(req, res) {
       });
     }
 
-    // Decrement stock in memory
-    for (const item of order.items) {
-      const p = getMemoryProductById(item.product);
-      if (p) {
-        if (p.stock < item.quantity) {
+    if (order._isVerifying) {
+      return res.status(409).json({
+        success: false,
+        message: 'Payment verification is currently in progress for this order.',
+      });
+    }
+
+    order._isVerifying = true;
+    try {
+      // Decrement stock in memory atomically with rollback
+      const decrementedMem = [];
+      for (const item of order.items) {
+        const p = getMemoryProductById(item.product);
+        if (!p || p.stock < item.quantity) {
+          for (const dec of decrementedMem) {
+            const rollP = getMemoryProductById(dec.product);
+            if (rollP) rollP.stock += dec.quantity;
+          }
           return res.status(400).json({
             success: false,
             message: `Insufficient inventory for "${item.name}".`,
           });
         }
         p.stock = Math.max(0, p.stock - item.quantity);
+        decrementedMem.push(item);
       }
-    }
 
-    order.status = 'confirmed';
-    order.paymentStatus = 'paid';
-    order.razorpayPaymentId = razorpay_payment_id;
-    order.razorpaySignature = razorpay_signature;
-    order.paidAt = new Date().toISOString();
-    order.updatedAt = new Date().toISOString();
+      order.status = 'confirmed';
+      order.paymentStatus = 'paid';
+      order.razorpayPaymentId = razorpay_payment_id;
+      order.razorpaySignature = razorpay_signature;
+      order.paidAt = new Date().toISOString();
+      order.updatedAt = new Date().toISOString();
 
-    for (const item of order.items) {
-      memoryOrderItems.push({
-        _id: 'oi_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 5),
-        order: order._id,
-        ...item,
-      });
+      for (const item of order.items) {
+        memoryOrderItems.push({
+          _id: 'oi_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 5),
+          order: order._id,
+          ...item,
+        });
+      }
+    } finally {
+      delete order._isVerifying;
     }
 
     return res.json({
@@ -1460,12 +1575,39 @@ export async function recordRazorpayPaymentFailureHandler(req, res) {
  */
 export async function simulateRazorpayTestSignatureHandler(req, res) {
   try {
+    const userId = req.user._id || req.user.id;
+    const isAdmin = req.user.role === 'admin';
     const targetOrderId = req.body.razorpay_order_id || req.body.orderId;
+
     if (!targetOrderId) {
       return res.status(400).json({
         success: false,
         message: 'razorpay_order_id (or orderId) is required.',
       });
+    }
+
+    // Customer order ownership validation: Customer can only simulate signatures for their own order
+    let order = null;
+    if (mongoose.connection.readyState === 1) {
+      order = await Order.findOne({ razorpayOrderId: targetOrderId });
+    } else {
+      order = memoryOrders.find((o) => o.razorpayOrderId === targetOrderId);
+    }
+
+    if (order) {
+      const orderOwnerId = order.user?._id?.toString() || order.user?.toString();
+      const orderOwnerEmail = order.user?.email?.toLowerCase();
+      const userEmail = req.user.email?.toLowerCase();
+      const isOwner =
+        orderOwnerId === userId.toString() ||
+        (orderOwnerEmail && userEmail && orderOwnerEmail === userEmail);
+
+      if (!isAdmin && !isOwner) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied: You are only authorized to simulate payment for your own orders.',
+        });
+      }
     }
 
     const targetPaymentId =
@@ -1489,6 +1631,208 @@ export async function simulateRazorpayTestSignatureHandler(req, res) {
       success: false,
       message: 'Failed to generate test signature',
     });
+  }
+}
+
+/**
+ * POST /api/orders/razorpay/webhook
+ * Asynchronous webhook endpoint for Razorpay payment synchronization.
+ * Verifies HMAC-SHA256 signature from x-razorpay-signature header against raw body.
+ * Synchronizes payment capture and failure states, performs idempotent updates,
+ * validates financial totals, and updates inventory.
+ */
+export async function handleRazorpayWebhook(req, res) {
+  try {
+    const signature = req.headers['x-razorpay-signature'];
+    const rawBody = req.rawBody || Buffer.from(JSON.stringify(req.body || {}));
+
+    if (!signature) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing x-razorpay-signature header',
+      });
+    }
+
+    const isValid = verifyRazorpayWebhookSignature({
+      rawBody,
+      signature,
+    });
+
+    if (!isValid) {
+      console.warn('[Razorpay Webhook] Rejected webhook with invalid signature');
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid Razorpay webhook signature',
+      });
+    }
+
+    const event = req.body.event;
+    const payload = req.body.payload || {};
+
+    // 1. PAYMENT CAPTURED / ORDER PAID EVENT
+    if (event === 'payment.captured' || event === 'order.paid') {
+      const paymentEntity = payload.payment?.entity || {};
+      const orderEntity = payload.order?.entity || {};
+      const razorpayOrderId = paymentEntity.order_id || orderEntity.id;
+      const razorpayPaymentId = paymentEntity.id;
+      const paidAmount = paymentEntity.amount || orderEntity.amount_paid;
+
+      if (!razorpayOrderId) {
+        return res.status(200).json({ status: 'ok', message: 'No order_id in event payload' });
+      }
+
+      if (mongoose.connection.readyState === 1) {
+        const order = await Order.findOne({ razorpayOrderId });
+        if (!order) {
+          console.warn(`[Razorpay Webhook] Order not found for razorpayOrderId: ${razorpayOrderId}`);
+          return res.status(200).json({ status: 'ok', message: 'Order reference not found' });
+        }
+
+        // Idempotency check: If already paid, return 200 immediately
+        if (order.paymentStatus === 'paid') {
+          return res.status(200).json({ status: 'ok', message: 'Order already processed and paid' });
+        }
+
+        // Amount validation: Ensure webhook amount in paise matches server-calculated order total
+        const expectedPaise = Math.round(order.total * 100);
+        if (paidAmount && Math.abs(paidAmount - expectedPaise) > 100) {
+          console.error(
+            `[Razorpay Webhook] Amount mismatch for order ${order.orderNumber}. Expected: ${expectedPaise}, received: ${paidAmount}`
+          );
+          return res.status(400).json({
+            success: false,
+            message: 'Webhook payment amount does not match order grand total',
+          });
+        }
+
+        // Atomically update order status and decrement inventory
+        await executeWithTransaction(async (session) => {
+          const updatedOrder = session
+            ? await Order.findOneAndUpdate(
+                { _id: order._id, paymentStatus: { $ne: 'paid' } },
+                {
+                  $set: {
+                    status: 'confirmed',
+                    paymentStatus: 'paid',
+                    razorpayPaymentId: razorpayPaymentId || order.razorpayPaymentId,
+                    paidAt: new Date(),
+                  },
+                },
+                { session, new: true }
+              )
+            : await Order.findOneAndUpdate(
+                { _id: order._id, paymentStatus: { $ne: 'paid' } },
+                {
+                  $set: {
+                    status: 'confirmed',
+                    paymentStatus: 'paid',
+                    razorpayPaymentId: razorpayPaymentId || order.razorpayPaymentId,
+                    paidAt: new Date(),
+                  },
+                },
+                { new: true }
+              );
+
+          if (!updatedOrder) return;
+
+          // Decrement stock atomically with stock guard
+          for (const item of order.items) {
+            if (session) {
+              await Product.findOneAndUpdate(
+                { _id: item.product, stock: { $gte: item.quantity } },
+                { $inc: { stock: -item.quantity } },
+                { session }
+              );
+            } else {
+              await Product.findOneAndUpdate(
+                { _id: item.product, stock: { $gte: item.quantity } },
+                { $inc: { stock: -item.quantity } }
+              );
+            }
+          }
+
+          // Clear customer's shopping cart
+          if (order.user) {
+            const clearQuery = { user: order.user };
+            if (session) {
+              await Cart.findOneAndUpdate(clearQuery, { items: [] }, { session }).catch(() => {});
+            } else {
+              await Cart.findOneAndUpdate(clearQuery, { items: [] }).catch(() => {});
+            }
+          }
+        });
+
+        return res.status(200).json({
+          status: 'ok',
+          event,
+          orderNumber: order.orderNumber,
+          message: 'Order successfully marked as paid via webhook',
+        });
+      }
+
+      // In-Memory Fallback
+      const order = memoryOrders.find((o) => o.razorpayOrderId === razorpayOrderId);
+      if (!order) {
+        return res.status(200).json({ status: 'ok', message: 'Order reference not found' });
+      }
+
+      if (order.paymentStatus === 'paid') {
+        return res.status(200).json({ status: 'ok', message: 'Order already processed and paid' });
+      }
+
+      for (const item of order.items) {
+        const p = getMemoryProductById(item.product);
+        if (p) {
+          p.stock = Math.max(0, p.stock - item.quantity);
+        }
+      }
+
+      order.status = 'confirmed';
+      order.paymentStatus = 'paid';
+      if (razorpayPaymentId) order.razorpayPaymentId = razorpayPaymentId;
+      order.paidAt = new Date().toISOString();
+      order.updatedAt = new Date().toISOString();
+
+      return res.status(200).json({
+        status: 'ok',
+        event,
+        orderNumber: order.orderNumber,
+        message: 'Order marked as paid via webhook',
+      });
+    }
+
+    // 2. PAYMENT FAILED EVENT
+    if (event === 'payment.failed') {
+      const paymentEntity = payload.payment?.entity || {};
+      const razorpayOrderId = paymentEntity.order_id;
+      const errorDescription = paymentEntity.error_description || 'Payment failed';
+
+      if (razorpayOrderId) {
+        if (mongoose.connection.readyState === 1) {
+          const order = await Order.findOne({ razorpayOrderId });
+          if (order && order.paymentStatus !== 'paid') {
+            order.paymentStatus = 'failed';
+            order.notes = order.notes ? `${order.notes} | Webhook: ${errorDescription}` : `Webhook: ${errorDescription}`;
+            await order.save();
+          }
+        } else {
+          const order = memoryOrders.find((o) => o.razorpayOrderId === razorpayOrderId);
+          if (order && order.paymentStatus !== 'paid') {
+            order.paymentStatus = 'failed';
+            order.notes = order.notes ? `${order.notes} | Webhook: ${errorDescription}` : `Webhook: ${errorDescription}`;
+            order.updatedAt = new Date().toISOString();
+          }
+        }
+      }
+
+      return res.status(200).json({ status: 'ok', event, message: 'Payment failure recorded' });
+    }
+
+    // Other unhandled events
+    return res.status(200).json({ status: 'ok', event, message: 'Event ignored' });
+  } catch (err) {
+    console.error('[Razorpay Webhook] Error processing webhook:', err);
+    return res.status(500).json({ success: false, message: 'Internal server error processing webhook' });
   }
 }
 

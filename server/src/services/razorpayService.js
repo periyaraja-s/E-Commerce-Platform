@@ -155,3 +155,70 @@ export function generateTestSignature(orderId, paymentId) {
     .update(`${orderId}|${paymentId}`)
     .digest('hex');
 }
+
+/**
+ * Verifies Razorpay Webhook signature using HMAC-SHA256.
+ * Webhook signature rule:
+ * hmac_sha256(raw_request_body, webhook_secret)
+ * 
+ * @param {Object} params
+ * @param {Buffer|string} params.rawBody - Raw unparsed request body
+ * @param {string} params.signature - Value of x-razorpay-signature header
+ * @param {string} [params.secret] - Optional custom webhook secret
+ * @returns {boolean} true if signature matches, false otherwise
+ */
+export function verifyRazorpayWebhookSignature({ rawBody, signature, secret }) {
+  if (!rawBody || !signature) {
+    return false;
+  }
+
+  const webhookSecret =
+    secret ||
+    process.env.RAZORPAY_WEBHOOK_SECRET ||
+    process.env.RAZORPAY_KEY_SECRET ||
+    DEFAULT_TEST_KEY_SECRET;
+
+  const bodyData = Buffer.isBuffer(rawBody) ? rawBody : Buffer.from(String(rawBody), 'utf8');
+
+  const expectedSignature = crypto
+    .createHmac('sha256', webhookSecret)
+    .update(bodyData)
+    .digest('hex');
+
+  try {
+    const expectedBuffer = Buffer.from(expectedSignature, 'utf8');
+    const actualBuffer = Buffer.from(signature, 'utf8');
+
+    if (expectedBuffer.length !== actualBuffer.length) {
+      return false;
+    }
+
+    return crypto.timingSafeEqual(expectedBuffer, actualBuffer);
+  } catch (err) {
+    console.error('[Razorpay Webhook] Signature verification error:', err);
+    return false;
+  }
+}
+
+/**
+ * Helper to compute test webhook signature for testing.
+ * 
+ * @param {string|Buffer} rawBody
+ * @param {string} [secret]
+ * @returns {string}
+ */
+export function generateWebhookTestSignature(rawBody, secret) {
+  const webhookSecret =
+    secret ||
+    process.env.RAZORPAY_WEBHOOK_SECRET ||
+    process.env.RAZORPAY_KEY_SECRET ||
+    DEFAULT_TEST_KEY_SECRET;
+
+  const bodyData = Buffer.isBuffer(rawBody) ? rawBody : Buffer.from(String(rawBody), 'utf8');
+
+  return crypto
+    .createHmac('sha256', webhookSecret)
+    .update(bodyData)
+    .digest('hex');
+}
+
