@@ -51,8 +51,10 @@ const orderSchema = new mongoose.Schema(
       enum: ['cash_on_delivery', 'cod', 'razorpay', 'credit_card', 'standard'],
       default: 'cash_on_delivery',
     },
-    razorpayOrderId: { type: String, default: null },
-    razorpayPaymentId: { type: String, default: null },
+    razorpayOrderId: { type: String, default: null, index: true },
+    razorpayPaymentId: { type: String, default: null, index: true },
+    razorpaySignature: { type: String, default: null },
+    paidAt: { type: Date, default: null },
     notes: { type: String, default: '' },
   },
   { timestamps: true },
@@ -60,5 +62,6 @@ const orderSchema = new mongoose.Schema(
 
 orderSchema.index({ user: 1, createdAt: -1 });
 orderSchema.index({ paymentStatus: 1, status: 1 });
+orderSchema.index({ razorpayOrderId: 1 });
 
 export default mongoose.model('Order', orderSchema);

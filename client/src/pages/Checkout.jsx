@@ -32,11 +32,19 @@ export default function Checkout() {
     notes: '',
   });
 
+  // Payment Method Selection: 'razorpay' (default) or 'cash_on_delivery'
+  const [paymentMethod, setPaymentMethod] = useState('razorpay');
+
   // Validation errors
   const [errors, setErrors] = useState({});
-  // Submission & server error state
+  // Submission, verification & server error state
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
   const [serverError, setServerError] = useState(null);
+  const [paymentNotice, setPaymentNotice] = useState(null);
+
+  // Fallback simulator modal for environments where external Razorpay script is blocked or offline
+  const [testSimulatorData, setTestSimulatorData] = useState(null);
 
   // Sync user name/email if user loads late
   useEffect(() => {
@@ -144,6 +152,7 @@ export default function Checkout() {
   const handleSubmitOrder = async (e) => {
     e.preventDefault();
     setServerError(null);
+    setPaymentNotice(null);
 
     if (!validateForm()) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -153,7 +162,7 @@ export default function Checkout() {
     setIsSubmitting(true);
 
     try {
-      // Map current cart items for backup validation
+      // Map current cart items for validation
       const itemsPayload = items.map((item) => ({
         product: item.product._id || item.product.id || item.product,
         quantity: item.quantity,
@@ -161,36 +170,143 @@ export default function Checkout() {
         price: item.product.price,
       }));
 
-      const payload = {
-        shippingAddress: {
-          name: formData.name.trim(),
-          phone: formData.phone.trim(),
-          line1: formData.line1.trim(),
-          line2: (formData.line2 || '').trim(),
-          city: formData.city.trim(),
-          state: formData.state.trim(),
-          postalCode: formData.postalCode.trim(),
-          country: formData.country.trim(),
-        },
-        paymentMethod: 'cash_on_delivery',
-        notes: (formData.notes || '').trim(),
-        items: itemsPayload,
+      const shippingAddressPayload = {
+        name: formData.name.trim(),
+        phone: formData.phone.trim(),
+        line1: formData.line1.trim(),
+        line2: (formData.line2 || '').trim(),
+        city: formData.city.trim(),
+        state: formData.state.trim(),
+        postalCode: formData.postalCode.trim(),
+        country: formData.country.trim(),
       };
 
-      const res = await api.post('/orders', payload);
-
-      if (res.data?.success && res.data?.data) {
-        const createdOrder = res.data.data;
-        // Clear customer cart context state
-        await clearCart();
-
-        // Navigate to dedicated Order Confirmation screen
-        navigate(`/order-confirmation/${createdOrder._id || createdOrder.orderNumber}`, {
-          state: { order: createdOrder, isNewOrder: true },
-          replace: true,
+      if (paymentMethod === 'razorpay') {
+        // === RAZORPAY TEST MODE PAYMENT FLOW ===
+        // Step 1: Create Razorpay Order on server (server calculates amount & validates inventory)
+        const createRes = await api.post('/orders/razorpay/create-order', {
+          shippingAddress: shippingAddressPayload,
+          notes: (formData.notes || '').trim(),
+          items: itemsPayload,
         });
+
+        if (!createRes.data?.success || !createRes.data?.data) {
+          throw new Error(createRes.data?.message || 'Failed to initialize Razorpay payment order.');
+        }
+
+        const rzpData = createRes.data.data;
+
+        // Step 2: If Razorpay SDK is loaded, launch the standard Razorpay checkout modal
+        if (typeof window !== 'undefined' && typeof window.Razorpay === 'function') {
+          const options = {
+            key: rzpData.keyId,
+            amount: rzpData.amount,
+            currency: rzpData.currency || 'INR',
+            name: 'E-Commerce Store',
+            description: `Payment for Order #${rzpData.orderNumber}`,
+            order_id: rzpData.orderId,
+            prefill: {
+              name: formData.name.trim(),
+              email: user?.email || formData.email || '',
+              contact: formData.phone.trim(),
+            },
+            notes: {
+              orderNumber: rzpData.orderNumber,
+              environment: 'Test Mode',
+            },
+            theme: {
+              color: '#2563eb',
+            },
+            modal: {
+              ondismiss: async function () {
+                setIsSubmitting(false);
+                setPaymentNotice('Payment modal was closed. Your cart remains saved so you can retry checkout whenever ready.');
+              },
+            },
+            handler: async function (response) {
+              // Step 3: Verify cryptographic signature on server
+              try {
+                setIsVerifying(true);
+                const verifyRes = await api.post('/orders/razorpay/verify-payment', {
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                });
+
+                if (verifyRes.data?.success && verifyRes.data?.data) {
+                  // Clear customer cart only after server verifies signature & completes order
+                  await clearCart();
+                  const paidOrder = verifyRes.data.data;
+                  navigate(`/order-confirmation/${paidOrder.orderNumber || paidOrder._id}`, {
+                    state: { order: paidOrder, isNewOrder: true, paymentSuccess: true },
+                    replace: true,
+                  });
+                } else {
+                  throw new Error(verifyRes.data?.message || 'Payment signature verification failed.');
+                }
+              } catch (verifyErr) {
+                console.error('Razorpay payment verification error:', verifyErr);
+                setServerError(
+                  verifyErr.response?.data?.message ||
+                    verifyErr.message ||
+                    'Payment verification failed. Please contact support or retry.'
+                );
+                setIsVerifying(false);
+                setIsSubmitting(false);
+              }
+            },
+          };
+
+          const rzpInstance = new window.Razorpay(options);
+
+          rzpInstance.on('payment.failed', async function (failedResponse) {
+            try {
+              await api.post('/orders/razorpay/payment-failed', {
+                razorpay_order_id: rzpData.orderId,
+                razorpay_payment_id: failedResponse.error?.metadata?.payment_id,
+                error_description: failedResponse.error?.description,
+              });
+            } catch (failErr) {
+              console.error('Failed to notify payment failure:', failErr);
+            }
+            setServerError(`Payment Failed: ${failedResponse.error?.description || 'Transaction was declined.'}`);
+            setIsSubmitting(false);
+          });
+
+          rzpInstance.open();
+        } else {
+          // If Razorpay SDK script is not available (e.g. adblocker, sandbox, or offline), open test simulator
+          setTestSimulatorData({
+            keyId: rzpData.keyId,
+            orderId: rzpData.orderId,
+            amount: rzpData.amount,
+            currency: rzpData.currency || 'INR',
+            orderNumber: rzpData.orderNumber,
+            customerName: formData.name.trim(),
+          });
+          setIsSubmitting(false);
+        }
       } else {
-        throw new Error(res.data?.message || 'Order creation failed. Please try again.');
+        // === CASH ON DELIVERY FLOW ===
+        const payload = {
+          shippingAddress: shippingAddressPayload,
+          paymentMethod: 'cash_on_delivery',
+          notes: (formData.notes || '').trim(),
+          items: itemsPayload,
+        };
+
+        const res = await api.post('/orders', payload);
+
+        if (res.data?.success && res.data?.data) {
+          const createdOrder = res.data.data;
+          await clearCart();
+          navigate(`/order-confirmation/${createdOrder._id || createdOrder.orderNumber}`, {
+            state: { order: createdOrder, isNewOrder: true },
+            replace: true,
+          });
+        } else {
+          throw new Error(res.data?.message || 'Order creation failed. Please try again.');
+        }
       }
     } catch (err) {
       console.error('Checkout error:', err);
@@ -201,8 +317,67 @@ export default function Checkout() {
       setServerError(message);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
-      setIsSubmitting(false);
+      if (paymentMethod === 'cash_on_delivery') {
+        setIsSubmitting(false);
+      }
     }
+  };
+
+  // Test Simulator Actions for Test Mode
+  const handleSimulatePaymentSuccess = async () => {
+    if (!testSimulatorData) return;
+    setIsVerifying(true);
+    setServerError(null);
+
+    try {
+      // 1. Get valid HMAC signature calculated by backend using test secret
+      const simRes = await api.post('/orders/razorpay/simulate-signature', {
+        razorpay_order_id: testSimulatorData.orderId,
+      });
+
+      if (!simRes.data?.success) {
+        throw new Error(simRes.data?.message || 'Could not generate test payment credentials.');
+      }
+
+      const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = simRes.data.data;
+
+      // 2. Call real verify-payment endpoint with the generated test signature
+      const verifyRes = await api.post('/orders/razorpay/verify-payment', {
+        razorpay_order_id,
+        razorpay_payment_id,
+        razorpay_signature,
+      });
+
+      if (verifyRes.data?.success && verifyRes.data?.data) {
+        await clearCart();
+        const paidOrder = verifyRes.data.data;
+        setTestSimulatorData(null);
+        navigate(`/order-confirmation/${paidOrder.orderNumber || paidOrder._id}`, {
+          state: { order: paidOrder, isNewOrder: true, paymentSuccess: true },
+          replace: true,
+        });
+      } else {
+        throw new Error(verifyRes.data?.message || 'Test payment verification failed.');
+      }
+    } catch (err) {
+      console.error('Simulate payment error:', err);
+      setServerError(err.response?.data?.message || err.message || 'Failed to complete test payment verification.');
+      setIsVerifying(false);
+    }
+  };
+
+  const handleSimulatePaymentFailure = async () => {
+    if (!testSimulatorData) return;
+    try {
+      await api.post('/orders/razorpay/payment-failed', {
+        razorpay_order_id: testSimulatorData.orderId,
+        error_description: 'Test Mode: Payment cancelled by user in simulator.',
+      });
+    } catch (e) {
+      console.error(e);
+    }
+    setTestSimulatorData(null);
+    setServerError('Payment was declined or cancelled (Test Mode). You can retry payment whenever you are ready.');
   };
 
   return (
@@ -471,7 +646,7 @@ export default function Checkout() {
               </div>
             </div>
 
-            {/* Payment Method Notice */}
+            {/* Payment Method Selection */}
             <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs mt-6">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
@@ -479,37 +654,103 @@ export default function Checkout() {
                 </div>
                 <div>
                   <h2 className="text-base font-bold text-slate-900">Payment Method</h2>
-                  <p className="text-xs text-slate-500">Standard secure payment method</p>
+                  <p className="text-xs text-slate-500">Choose your preferred payment method</p>
                 </div>
               </div>
 
-              <div className="p-4 rounded-2xl border-2 border-blue-600 bg-blue-50/40 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full border-2 border-blue-600 flex items-center justify-center shrink-0">
-                    <div className="w-2.5 h-2.5 rounded-full bg-blue-600" />
-                  </div>
-                  <div>
-                    <div className="font-bold text-sm text-slate-900">
-                      Cash on Delivery / Standard Invoice
+              <div className="space-y-3">
+                {/* Razorpay Test Mode Option (Recommended & Default) */}
+                <label
+                  htmlFor="payment-method-razorpay"
+                  className={`block p-4 rounded-2xl border-2 transition-all cursor-pointer ${
+                    paymentMethod === 'razorpay'
+                      ? 'border-blue-600 bg-blue-50/40 shadow-xs'
+                      : 'border-slate-200 bg-white hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <input
+                        id="payment-method-razorpay"
+                        type="radio"
+                        name="paymentMethod"
+                        value="razorpay"
+                        checked={paymentMethod === 'razorpay'}
+                        onChange={() => setPaymentMethod('razorpay')}
+                        className="mt-1 w-4 h-4 text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer"
+                        disabled={isSubmitting || isVerifying}
+                      />
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-sm text-slate-900">
+                            Razorpay Payment Gateway
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-extrabold tracking-wide uppercase border border-amber-200">
+                            Test Mode
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                          Pay securely with Cards (Visa, Mastercard, RuPay), UPI, NetBanking, or Wallets in Razorpay Test Mode.
+                        </p>
+                        <div className="flex items-center gap-2 mt-2 text-[11px] text-blue-700 font-medium bg-blue-100/60 px-2.5 py-1 rounded-lg">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="12" y1="16" x2="12" y2="12" />
+                            <line x1="12" y1="8" x2="12.01" y2="8" />
+                          </svg>
+                          <span>Safe sandbox: No real credit card or bank account will be charged.</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-xs text-slate-500 mt-0.5">
-                      Pay conveniently upon package arrival. No payment card or credentials required today.
+                    <span className="shrink-0 font-bold text-xs text-blue-600 hidden sm:inline">Instant</span>
+                  </div>
+                </label>
+
+                {/* Cash on Delivery Option */}
+                <label
+                  htmlFor="payment-method-cod"
+                  className={`block p-4 rounded-2xl border-2 transition-all cursor-pointer ${
+                    paymentMethod === 'cash_on_delivery'
+                      ? 'border-blue-600 bg-blue-50/40 shadow-xs'
+                      : 'border-slate-200 bg-white hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <input
+                        id="payment-method-cod"
+                        type="radio"
+                        name="paymentMethod"
+                        value="cash_on_delivery"
+                        checked={paymentMethod === 'cash_on_delivery'}
+                        onChange={() => setPaymentMethod('cash_on_delivery')}
+                        className="mt-1 w-4 h-4 text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer"
+                        disabled={isSubmitting || isVerifying}
+                      />
+                      <div>
+                        <span className="font-bold text-sm text-slate-900">
+                          Cash on Delivery (COD)
+                        </span>
+                        <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                          Pay in cash or upon package arrival at your doorstep. No payment credentials required today.
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <span className="px-2.5 py-1 rounded-full bg-blue-600 text-white text-[10px] font-bold">Standard</span>
+                </label>
               </div>
 
-              <div className="mt-4 p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 flex items-center gap-2">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 text-blue-600">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="16" x2="12" y2="12" />
-                  <line x1="12" y1="8" x2="12.01" y2="8" />
-                </svg>
-                <span>
-                  Online card payments &amp; digital wallets are in active certification and scheduled for an upcoming release.
-                </span>
-              </div>
+              {/* Payment Notice */}
+              {paymentNotice && (
+                <div className="mt-4 p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 flex items-start gap-2.5">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-amber-600 shrink-0 mt-0.5">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="8" />
+                  </svg>
+                  <span className="flex-1">{paymentNotice}</span>
+                </div>
+              )}
             </div>
           </form>
         </div>
@@ -608,17 +849,32 @@ export default function Checkout() {
               type="submit"
               form="checkout-address-form"
               className="w-full mt-6 py-3.5 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-sm cursor-pointer shadow-xs transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-              disabled={isSubmitting || cartLoading || items.length === 0}
+              disabled={isSubmitting || isVerifying || cartLoading || items.length === 0}
             >
-              {isSubmitting ? (
+              {isVerifying ? (
                 <span className="inline-flex items-center gap-2">
                   <svg className="w-4 h-4 text-white animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <circle cx="12" cy="12" r="10" strokeDasharray="32" strokeDashoffset="12" />
                   </svg>
-                  Processing &amp; Creating Order...
+                  Verifying Razorpay Signature...
+                </span>
+              ) : isSubmitting ? (
+                <span className="inline-flex items-center gap-2">
+                  <svg className="w-4 h-4 text-white animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <circle cx="12" cy="12" r="10" strokeDasharray="32" strokeDashoffset="12" />
+                  </svg>
+                  {paymentMethod === 'razorpay' ? 'Connecting to Razorpay...' : 'Creating Order...'}
+                </span>
+              ) : paymentMethod === 'razorpay' ? (
+                <span className="inline-flex items-center gap-2">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                    <rect x="2" y="5" width="20" height="14" rx="2" />
+                    <line x1="2" y1="10" x2="22" y2="10" />
+                  </svg>
+                  Proceed to Razorpay • ${grandTotal.toFixed(2)}
                 </span>
               ) : (
-                `Place Order • $${grandTotal.toFixed(2)}`
+                `Place Order (COD) • $${grandTotal.toFixed(2)}`
               )}
             </button>
 
@@ -629,24 +885,124 @@ export default function Checkout() {
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                   <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                 </svg>
-                <span>Bank-grade 256-bit encrypted checkout</span>
+                <span>Razorpay 256-bit encrypted Test Mode gateway</span>
               </div>
               <div className="flex items-center gap-2">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                 </svg>
-                <span>Stock reserved and validated server-side</span>
+                <span>Cryptographic HMAC-SHA256 signature verification</span>
               </div>
               <div className="flex items-center gap-2">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
-                <span>30-day money-back return guarantee</span>
+                <span>Atomic stock and order updates</span>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Razorpay Test Mode Simulator Dialog (shown if external Razorpay SDK is blocked or simulated) */}
+      {testSimulatorData && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-start justify-between gap-3 pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-black">
+                  ₹
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-bold text-slate-900">Razorpay Test Simulator</h3>
+                    <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">
+                      TEST MODE
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500">Official Razorpay test order initialized</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setTestSimulatorData(null)}
+                className="text-slate-400 hover:text-slate-700 text-lg font-bold p-1 cursor-pointer"
+                aria-label="Close simulator"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 text-xs space-y-2">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Order Reference:</span>
+                <span className="font-mono font-bold text-slate-900">{testSimulatorData.orderNumber}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Razorpay Order ID:</span>
+                <span className="font-mono text-blue-700 font-semibold truncate max-w-[200px]" title={testSimulatorData.orderId}>
+                  {testSimulatorData.orderId}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Payment Amount:</span>
+                <span className="font-bold text-slate-900">
+                  ₹{(testSimulatorData.amount / 100).toFixed(2)} ({testSimulatorData.currency})
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Customer:</span>
+                <span className="font-medium text-slate-800">{testSimulatorData.customerName}</span>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed">
+              In test mode, simulate customer checkout by authorizing this payment. The server will compute an authentic HMAC-SHA256 signature using your secret and perform atomic verification.
+            </p>
+
+            <div className="space-y-2.5 pt-2">
+              <button
+                type="button"
+                onClick={handleSimulatePaymentSuccess}
+                disabled={isVerifying}
+                className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs cursor-pointer transition-colors flex items-center justify-center gap-2"
+              >
+                {isVerifying ? (
+                  <>
+                    <svg className="w-4 h-4 text-white animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <circle cx="12" cy="12" r="10" strokeDasharray="32" strokeDashoffset="12" />
+                    </svg>
+                    <span>Verifying Signature &amp; Finalizing Order...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>✓ Simulate Successful Payment (Authorize)</span>
+                  </>
+                )}
+              </button>
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleSimulatePaymentFailure}
+                  disabled={isVerifying}
+                  className="flex-1 py-2.5 px-3 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold cursor-pointer transition-colors"
+                >
+                  Simulate Payment Decline
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTestSimulatorData(null)}
+                  disabled={isVerifying}
+                  className="py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

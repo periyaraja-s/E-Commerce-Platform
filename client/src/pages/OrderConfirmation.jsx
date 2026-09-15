@@ -166,9 +166,23 @@ export default function OrderConfirmation() {
           <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
             Status: {order.status?.toUpperCase()}
           </span>
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
-            Payment: {order.paymentMethod === 'cash_on_delivery' ? 'Cash on Delivery (Pending)' : order.paymentStatus?.toUpperCase()}
-          </span>
+          {order.paymentMethod === 'razorpay' ? (
+            <span
+              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${
+                order.paymentStatus === 'paid'
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : order.paymentStatus === 'failed'
+                  ? 'bg-rose-50 text-rose-700 border-rose-200'
+                  : 'bg-amber-50 text-amber-700 border-amber-200'
+              }`}
+            >
+              Razorpay: {order.paymentStatus?.toUpperCase() || 'PAID'}
+            </span>
+          ) : (
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+              Payment: Cash on Delivery
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2.5 flex-wrap">
           <button
@@ -337,8 +351,26 @@ export default function OrderConfirmation() {
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Payment Method:</span>
-                <span className="font-semibold text-slate-800">Cash / Pay on Delivery</span>
+                <span className="font-semibold text-slate-800">
+                  {order.paymentMethod === 'razorpay' ? 'Razorpay (Test Mode)' : 'Cash / Pay on Delivery'}
+                </span>
               </div>
+              {order.razorpayPaymentId && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Razorpay Payment ID:</span>
+                  <span className="font-mono text-xs font-semibold text-blue-700 truncate max-w-[170px]" title={order.razorpayPaymentId}>
+                    {order.razorpayPaymentId}
+                  </span>
+                </div>
+              )}
+              {order.paidAt && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Paid At:</span>
+                  <span className="font-medium text-slate-800 text-xs">
+                    {new Date(order.paidAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -275,8 +275,16 @@ export default function OrderDetails() {
               {order.status || 'confirmed'}
             </span>
 
-            <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200 capitalize">
-              Payment: {order.paymentStatus || 'Pending'} ({order.paymentMethod === 'cash_on_delivery' ? 'COD' : order.paymentMethod})
+            <span
+              className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold border capitalize ${
+                order.paymentStatus === 'paid'
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 font-bold'
+                  : order.paymentStatus === 'failed'
+                  ? 'bg-rose-50 text-rose-700 border-rose-200'
+                  : 'bg-slate-100 text-slate-700 border-slate-200'
+              }`}
+            >
+              Payment: {order.paymentStatus || 'Pending'} ({order.paymentMethod === 'razorpay' ? 'Razorpay' : 'COD'})
             </span>
           </div>
         </div>
@@ -546,17 +554,51 @@ export default function OrderDetails() {
               Payment Information
             </h2>
 
-            <div className="space-y-1.5 text-xs sm:text-sm">
+            <div className="space-y-2 text-xs sm:text-sm">
               <div className="flex justify-between">
                 <span className="text-slate-500">Method:</span>
                 <span className="font-bold text-slate-900 capitalize">
-                  {order.paymentMethod === 'cash_on_delivery' ? 'Cash on Delivery' : order.paymentMethod}
+                  {order.paymentMethod === 'razorpay' ? 'Razorpay (Test Mode)' : 'Cash on Delivery'}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Payment Status:</span>
-                <span className="font-bold text-slate-900 capitalize">{order.paymentStatus || 'Pending'}</span>
+                <span
+                  className={`font-bold capitalize ${
+                    order.paymentStatus === 'paid'
+                      ? 'text-emerald-600'
+                      : order.paymentStatus === 'failed'
+                      ? 'text-rose-600'
+                      : 'text-amber-600'
+                  }`}
+                >
+                  {order.paymentStatus || 'Pending'}
+                </span>
               </div>
+              {order.razorpayPaymentId && (
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500">Razorpay Payment ID:</span>
+                  <span className="font-mono text-xs font-semibold text-blue-700 truncate max-w-[160px]" title={order.razorpayPaymentId}>
+                    {order.razorpayPaymentId}
+                  </span>
+                </div>
+              )}
+              {order.razorpayOrderId && (
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500">Razorpay Order ID:</span>
+                  <span className="font-mono text-xs text-slate-600 truncate max-w-[160px]" title={order.razorpayOrderId}>
+                    {order.razorpayOrderId}
+                  </span>
+                </div>
+              )}
+              {order.paidAt && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Paid On:</span>
+                  <span className="font-medium text-slate-800 text-xs">
+                    {new Date(order.paidAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 

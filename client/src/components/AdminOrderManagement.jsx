@@ -631,6 +631,14 @@ export default function AdminOrderManagement() {
                           />
                           {order.paymentStatus || 'Pending'}
                         </span>
+                        {order.razorpayPaymentId && (
+                          <span
+                            className="font-mono text-[10px] text-blue-600 block mt-1 truncate max-w-[130px]"
+                            title={`Razorpay ID: ${order.razorpayPaymentId}`}
+                          >
+                            {order.razorpayPaymentId}
+                          </span>
+                        )}
                       </td>
 
                       {/* Fulfillment Status & Inline Switcher */}

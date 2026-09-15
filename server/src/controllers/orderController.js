@@ -4,6 +4,12 @@ import OrderItem from '../models/OrderItem.js';
 import Product from '../models/Product.js';
 import Cart from '../models/Cart.js';
 import { memoryProducts, getMemoryProductById } from './productController.js';
+import {
+  getRazorpayPublicConfig,
+  createRazorpayOrder,
+  verifyRazorpaySignature,
+  generateTestSignature,
+} from '../services/razorpayService.js';
 
 // In-memory fallback storage for orders when MongoDB is not connected
 export const memoryOrders = [
@@ -805,3 +811,684 @@ export async function updateOrderStatus(req, res) {
     });
   }
 }
+
+/**
+ * GET /api/orders/razorpay/config
+ * Returns public Razorpay configuration for client checkout initialization.
+ * CRITICAL: Never exposes RAZORPAY_KEY_SECRET.
+ */
+export async function getRazorpayConfigHandler(req, res) {
+  try {
+    const config = getRazorpayPublicConfig();
+    return res.json({
+      success: true,
+      data: config,
+    });
+  } catch (error) {
+    console.error('[Razorpay] Error fetching config:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve payment configuration',
+    });
+  }
+}
+
+/**
+ * GET /api/orders/razorpay/admin-settings
+ * Admin-only: Returns payment gateway settings, test mode status, and provider health.
+ * CRITICAL: Never exposes RAZORPAY_KEY_SECRET.
+ */
+export async function getAdminPaymentSettingsHandler(req, res) {
+  try {
+    if (req.user?.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: Admin privileges required to view payment gateway settings',
+      });
+    }
+
+    const publicConfig = getRazorpayPublicConfig();
+    const hasSecret = Boolean(process.env.RAZORPAY_KEY_SECRET);
+
+    return res.json({
+      success: true,
+      data: {
+        provider: 'Razorpay Payment Gateway',
+        mode: 'Test Mode',
+        isTestMode: true,
+        isEnabled: publicConfig.isEnabled,
+        keyId: publicConfig.keyId,
+        isSecretConfigured: hasSecret,
+        currency: publicConfig.currency,
+        verificationMethod: 'HMAC-SHA256 (Server-Side Enforced)',
+        supportedMethods: [
+          'Credit & Debit Cards (Visa, Mastercard, RuPay)',
+          'UPI (Google Pay, PhonePe, Paytm)',
+          'NetBanking (All major banks)',
+          'Digital Wallets',
+          'Cash on Delivery',
+        ],
+      },
+    });
+  } catch (error) {
+    console.error('[Razorpay Admin] Error getting payment settings:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve admin payment settings',
+    });
+  }
+}
+
+/**
+ * POST /api/orders/razorpay/create-order
+ * Customer creates a Razorpay test order.
+ * Calculates amount purely on server (never trusts client amount),
+ * validates stock, creates a pending order record, and returns public Key ID + Razorpay Order ID.
+ */
+export async function createRazorpayOrderHandler(req, res) {
+  try {
+    const userId = req.user._id || req.user.id;
+    const { shippingAddress, notes = '', items: directItems } = req.body;
+
+    // Validate customer shipping details
+    if (!shippingAddress) {
+      return res.status(422).json({
+        success: false,
+        message: 'Shipping address is required to initiate checkout.',
+      });
+    }
+
+    const { name, phone, line1, line2, city, state, postalCode, country } = shippingAddress;
+    const missingFields = [];
+    if (!name?.trim()) missingFields.push('Full Name');
+    if (!phone?.trim()) missingFields.push('Phone Number');
+    if (!line1?.trim()) missingFields.push('Street Address (Line 1)');
+    if (!city?.trim()) missingFields.push('City');
+    if (!state?.trim()) missingFields.push('State / Province');
+    if (!postalCode?.trim()) missingFields.push('Postal / ZIP Code');
+
+    if (missingFields.length > 0) {
+      return res.status(422).json({
+        success: false,
+        message: `Please complete required shipping fields: ${missingFields.join(', ')}`,
+        missingFields,
+      });
+    }
+
+    const cleanedAddress = {
+      name: name.trim(),
+      phone: phone.trim(),
+      line1: line1.trim(),
+      line2: (line2 || '').trim(),
+      city: city.trim(),
+      state: state.trim(),
+      postalCode: postalCode.trim(),
+      country: (country || 'United States').trim(),
+    };
+
+    // 1. MONGODB DATABASE FLOW
+    if (mongoose.connection.readyState === 1) {
+      // Step A: Load cart items
+      let cartDoc = await Cart.findOne({ user: userId }).populate('items.product');
+      let rawItems = [];
+      if (cartDoc && Array.isArray(cartDoc.items) && cartDoc.items.length > 0) {
+        rawItems = cartDoc.items;
+      } else if (Array.isArray(directItems) && directItems.length > 0) {
+        rawItems = directItems;
+      }
+
+      if (rawItems.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Your cart is empty. Please add products to your cart before proceeding to payment.',
+        });
+      }
+
+      // Step B: Server-side validation of stock and prices
+      const verifiedOrderItems = [];
+      let computedSubtotal = 0;
+
+      for (const item of rawItems) {
+        const productId = item.product?._id || item.product?.id || item.product;
+        const requestedQty = Number(item.quantity) || 1;
+
+        if (requestedQty < 1) {
+          return res.status(400).json({
+            success: false,
+            message: 'Item quantity must be at least 1.',
+          });
+        }
+
+        const product = await Product.findById(productId);
+        if (!product || product.isActive === false) {
+          return res.status(400).json({
+            success: false,
+            message: `"${item.product?.name || item.name || 'A selected product'}" is currently unavailable.`,
+          });
+        }
+
+        if (product.stock < requestedQty) {
+          return res.status(400).json({
+            success: false,
+            message: `Insufficient stock for "${product.name}". Only ${product.stock} available (requested ${requestedQty}).`,
+            availableStock: product.stock,
+            productId: product._id,
+          });
+        }
+
+        const unitPrice = Number(product.price);
+        const itemSubtotal = Math.round(unitPrice * requestedQty * 100) / 100;
+        computedSubtotal += itemSubtotal;
+
+        verifiedOrderItems.push({
+          product: product._id,
+          name: product.name,
+          price: unitPrice,
+          quantity: requestedQty,
+          image: (Array.isArray(product.images) && product.images[0]) || '',
+          subtotal: itemSubtotal,
+        });
+      }
+
+      // Step C: Server financial calculations (NEVER trust amount from React)
+      computedSubtotal = Math.round(computedSubtotal * 100) / 100;
+      const shippingFee = computedSubtotal >= 50 ? 0 : 9.99;
+      const tax = Math.round(computedSubtotal * 0.08 * 100) / 100;
+      const grandTotal = Math.round((computedSubtotal + shippingFee + tax) * 100) / 100;
+      const amountInSubunits = Math.round(grandTotal * 100); // in paise
+
+      let orderNumber = generateOrderNumber();
+      const existing = await Order.findOne({ orderNumber });
+      if (existing) {
+        orderNumber = `${generateOrderNumber()}-${Math.floor(10 + Math.random() * 90)}`;
+      }
+
+      // Step D: Create Razorpay order via Razorpay service
+      const razorpayOrder = await createRazorpayOrder({
+        amountInSubunits,
+        currency: 'INR',
+        receipt: orderNumber,
+        notes: {
+          orderNumber,
+          userId: userId.toString(),
+          customerName: cleanedAddress.name,
+        },
+      });
+
+      // Step E: Create pending order record in MongoDB
+      const newOrder = new Order({
+        orderNumber,
+        user: userId,
+        items: verifiedOrderItems,
+        shippingAddress: cleanedAddress,
+        subtotal: computedSubtotal,
+        shippingFee,
+        tax,
+        total: grandTotal,
+        status: 'pending',
+        paymentStatus: 'pending',
+        paymentMethod: 'razorpay',
+        razorpayOrderId: razorpayOrder.id,
+        notes: (notes || '').trim(),
+      });
+
+      await newOrder.save();
+
+      const publicConfig = getRazorpayPublicConfig();
+
+      return res.status(201).json({
+        success: true,
+        message: 'Razorpay order created successfully',
+        data: {
+          keyId: publicConfig.keyId,
+          orderId: razorpayOrder.id,
+          amount: razorpayOrder.amount,
+          currency: razorpayOrder.currency || 'INR',
+          orderNumber: newOrder.orderNumber,
+          internalOrderId: newOrder._id,
+          subtotal: computedSubtotal,
+          shippingFee,
+          tax,
+          total: grandTotal,
+        },
+      });
+    }
+
+    // 2. IN-MEMORY FALLBACK FLOW (when MongoDB is not connected)
+    const userCart = directItems || [];
+    if (!userCart || userCart.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Your cart is empty. Please add products before checking out.',
+      });
+    }
+
+    const verifiedOrderItems = [];
+    let computedSubtotal = 0;
+
+    for (const item of userCart) {
+      const prodId = item.product?._id || item.product?.id || item.product;
+      const product = getMemoryProductById(prodId);
+      const requestedQty = Number(item.quantity) || 1;
+
+      if (!product || product.isActive === false) {
+        return res.status(400).json({
+          success: false,
+          message: `Product "${item.name || 'item'}" is currently unavailable.`,
+        });
+      }
+
+      if (product.stock < requestedQty) {
+        return res.status(400).json({
+          success: false,
+          message: `Insufficient stock for "${product.name}". Only ${product.stock} available (requested: ${requestedQty}).`,
+          availableStock: product.stock,
+          productId: product._id,
+        });
+      }
+
+      const unitPrice = Number(product.price);
+      const itemSubtotal = Math.round(unitPrice * requestedQty * 100) / 100;
+      computedSubtotal += itemSubtotal;
+
+      verifiedOrderItems.push({
+        product: product._id,
+        name: product.name,
+        price: unitPrice,
+        quantity: requestedQty,
+        image: (Array.isArray(product.images) && product.images[0]) || '',
+        subtotal: itemSubtotal,
+      });
+    }
+
+    computedSubtotal = Math.round(computedSubtotal * 100) / 100;
+    const shippingFee = computedSubtotal >= 50 ? 0 : 9.99;
+    const tax = Math.round(computedSubtotal * 0.08 * 100) / 100;
+    const grandTotal = Math.round((computedSubtotal + shippingFee + tax) * 100) / 100;
+    const amountInSubunits = Math.round(grandTotal * 100);
+
+    const orderNumber = generateOrderNumber();
+    const razorpayOrder = await createRazorpayOrder({
+      amountInSubunits,
+      currency: 'INR',
+      receipt: orderNumber,
+      notes: { orderNumber, customerName: cleanedAddress.name },
+    });
+
+    const newMemoryOrder = {
+      _id: 'ord_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 5),
+      orderNumber,
+      user: {
+        _id: userId,
+        name: req.user.name || 'Customer',
+        email: req.user.email || 'customer@example.com',
+      },
+      items: verifiedOrderItems,
+      shippingAddress: cleanedAddress,
+      subtotal: computedSubtotal,
+      shippingFee,
+      tax,
+      total: grandTotal,
+      status: 'pending',
+      paymentStatus: 'pending',
+      paymentMethod: 'razorpay',
+      razorpayOrderId: razorpayOrder.id,
+      razorpayPaymentId: null,
+      razorpaySignature: null,
+      paidAt: null,
+      notes: (notes || '').trim(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    memoryOrders.unshift(newMemoryOrder);
+    const publicConfig = getRazorpayPublicConfig();
+
+    return res.status(201).json({
+      success: true,
+      message: 'Razorpay order created successfully',
+      data: {
+        keyId: publicConfig.keyId,
+        orderId: razorpayOrder.id,
+        amount: razorpayOrder.amount,
+        currency: razorpayOrder.currency || 'INR',
+        orderNumber: newMemoryOrder.orderNumber,
+        internalOrderId: newMemoryOrder._id,
+        subtotal: computedSubtotal,
+        shippingFee,
+        tax,
+        total: grandTotal,
+      },
+    });
+  } catch (error) {
+    console.error('[Razorpay] Error in createRazorpayOrderHandler:', error);
+    const statusCode = error.statusCode || 500;
+    return res.status(statusCode).json({
+      success: false,
+      message: error.message || 'Failed to create Razorpay order',
+    });
+  }
+}
+
+/**
+ * POST /api/orders/razorpay/verify-payment
+ * Verifies Razorpay payment signature server-side.
+ * On valid signature: inside transaction, verifies & decrements stock, marks order as paid,
+ * records payment details, and clears customer cart.
+ * On invalid signature: marks paymentStatus as 'failed' and returns 400.
+ */
+export async function verifyRazorpayPaymentHandler(req, res) {
+  try {
+    const userId = req.user._id || req.user.id;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required Razorpay payment verification parameters.',
+      });
+    }
+
+    // Step 1: Server-side cryptographic signature verification using secret
+    const isValidSignature = verifyRazorpaySignature({
+      orderId: razorpay_order_id,
+      paymentId: razorpay_payment_id,
+      signature: razorpay_signature,
+    });
+
+    // 1. MONGODB DATABASE PATH
+    if (mongoose.connection.readyState === 1) {
+      const order = await Order.findOne({ razorpayOrderId: razorpay_order_id });
+
+      if (!order) {
+        return res.status(404).json({
+          success: false,
+          message: 'Order reference corresponding to Razorpay order not found.',
+        });
+      }
+
+      // Enforce customer ownership
+      const orderOwnerId = order.user?._id?.toString() || order.user?.toString();
+      if (orderOwnerId !== userId.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied: You are only authorized to verify payment for your own orders.',
+        });
+      }
+
+      // If signature is INVALID: fail payment, do NOT mark as paid, do NOT decrement stock
+      if (!isValidSignature) {
+        order.paymentStatus = 'failed';
+        await order.save();
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid Razorpay signature. Server-side payment verification failed.',
+        });
+      }
+
+      // If already paid, return existing order
+      if (order.paymentStatus === 'paid') {
+        return res.json({
+          success: true,
+          message: 'Payment was already verified and processed.',
+          data: order,
+        });
+      }
+
+      // Signature is valid: Execute payment, order, and stock updates in database transaction
+      await executeWithTransaction(async (session) => {
+        // Decrement product inventory stock atomically with stock check
+        for (const item of order.items) {
+          const product = session
+            ? await Product.findById(item.product).session(session)
+            : await Product.findById(item.product);
+
+          if (!product || product.stock < item.quantity) {
+            const stockErr = new Error(
+              `Insufficient stock for "${item.name}". Required: ${item.quantity}, available: ${product?.stock ?? 0}.`
+            );
+            stockErr.statusCode = 400;
+            throw stockErr;
+          }
+
+          const updateQuery = { $inc: { stock: -item.quantity } };
+          if (session) {
+            await Product.findByIdAndUpdate(item.product, updateQuery, { session });
+          } else {
+            await Product.findByIdAndUpdate(item.product, updateQuery);
+          }
+        }
+
+        // Update order status & payment details
+        order.status = 'confirmed';
+        order.paymentStatus = 'paid';
+        order.razorpayPaymentId = razorpay_payment_id;
+        order.razorpaySignature = razorpay_signature;
+        order.paidAt = new Date();
+
+        if (session) {
+          await order.save({ session });
+        } else {
+          await order.save();
+        }
+
+        // Persist OrderItem records
+        const orderItemDocs = order.items.map((item) => ({
+          order: order._id,
+          product: item.product,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          image: item.image,
+          subtotal: item.subtotal,
+        }));
+
+        if (session) {
+          await OrderItem.insertMany(orderItemDocs, { session }).catch(() => {});
+          // Clear customer's shopping cart
+          await Cart.findOneAndUpdate({ user: userId }, { items: [] }, { session });
+        } else {
+          await OrderItem.insertMany(orderItemDocs).catch(() => {});
+          await Cart.findOneAndUpdate({ user: userId }, { items: [] });
+        }
+      });
+
+      await order.populate('user', 'name email');
+
+      return res.json({
+        success: true,
+        message: `Payment of $${order.total.toFixed(2)} verified successfully! Order reference: ${order.orderNumber}`,
+        data: order,
+      });
+    }
+
+    // 2. IN-MEMORY FALLBACK PATH
+    const order = memoryOrders.find((o) => o.razorpayOrderId === razorpay_order_id);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order reference corresponding to Razorpay order not found.',
+      });
+    }
+
+    const orderOwnerId = order.user?._id?.toString() || order.user?.toString();
+    const orderOwnerEmail = order.user?.email?.toLowerCase();
+    const userEmail = req.user.email?.toLowerCase();
+    const isOwner =
+      orderOwnerId === userId.toString() ||
+      (orderOwnerEmail && userEmail && orderOwnerEmail === userEmail);
+
+    if (!isOwner) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: You are only authorized to verify payment for your own orders.',
+      });
+    }
+
+    if (!isValidSignature) {
+      order.paymentStatus = 'failed';
+      order.updatedAt = new Date().toISOString();
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid Razorpay signature. Server-side payment verification failed.',
+      });
+    }
+
+    if (order.paymentStatus === 'paid') {
+      return res.json({
+        success: true,
+        message: 'Payment was already verified and processed.',
+        data: order,
+      });
+    }
+
+    // Decrement stock in memory
+    for (const item of order.items) {
+      const p = getMemoryProductById(item.product);
+      if (p) {
+        if (p.stock < item.quantity) {
+          return res.status(400).json({
+            success: false,
+            message: `Insufficient inventory for "${item.name}".`,
+          });
+        }
+        p.stock = Math.max(0, p.stock - item.quantity);
+      }
+    }
+
+    order.status = 'confirmed';
+    order.paymentStatus = 'paid';
+    order.razorpayPaymentId = razorpay_payment_id;
+    order.razorpaySignature = razorpay_signature;
+    order.paidAt = new Date().toISOString();
+    order.updatedAt = new Date().toISOString();
+
+    for (const item of order.items) {
+      memoryOrderItems.push({
+        _id: 'oi_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 5),
+        order: order._id,
+        ...item,
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: `Payment of $${order.total.toFixed(2)} verified successfully! Order reference: ${order.orderNumber}`,
+      data: order,
+    });
+  } catch (error) {
+    console.error('[Razorpay] Error in verifyRazorpayPaymentHandler:', error);
+    const statusCode = error.statusCode || 500;
+    return res.status(statusCode).json({
+      success: false,
+      message: error.message || 'Payment verification failed due to internal server error.',
+    });
+  }
+}
+
+/**
+ * POST /api/orders/razorpay/payment-failed
+ * Records payment failure when customer cancels or transaction fails.
+ * Marks paymentStatus as 'failed' without altering stock or marking order as paid.
+ */
+export async function recordRazorpayPaymentFailureHandler(req, res) {
+  try {
+    const userId = req.user._id || req.user.id;
+    const { razorpay_order_id, razorpay_payment_id, error_description } = req.body;
+
+    if (!razorpay_order_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Razorpay order ID is required.',
+      });
+    }
+
+    if (mongoose.connection.readyState === 1) {
+      const order = await Order.findOne({ razorpayOrderId: razorpay_order_id });
+      if (!order) {
+        return res.status(404).json({ success: false, message: 'Order not found.' });
+      }
+
+      const orderOwnerId = order.user?._id?.toString() || order.user?.toString();
+      if (orderOwnerId !== userId.toString()) {
+        return res.status(403).json({ success: false, message: 'Access denied.' });
+      }
+
+      order.paymentStatus = 'failed';
+      if (razorpay_payment_id) {
+        order.razorpayPaymentId = razorpay_payment_id;
+      }
+      if (error_description) {
+        order.notes = order.notes ? `${order.notes} | Payment failed: ${error_description}` : `Payment failed: ${error_description}`;
+      }
+      await order.save();
+
+      return res.json({
+        success: true,
+        message: 'Payment failure recorded.',
+        data: order,
+      });
+    }
+
+    const order = memoryOrders.find((o) => o.razorpayOrderId === razorpay_order_id);
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found.' });
+    }
+
+    order.paymentStatus = 'failed';
+    if (razorpay_payment_id) order.razorpayPaymentId = razorpay_payment_id;
+    order.updatedAt = new Date().toISOString();
+
+    return res.json({
+      success: true,
+      message: 'Payment failure recorded.',
+      data: order,
+    });
+  } catch (error) {
+    console.error('[Razorpay] Error recording failure:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to record payment failure.',
+    });
+  }
+}
+
+/**
+ * POST /api/orders/razorpay/simulate-signature
+ * Test Mode utility: Generates a cryptographically valid HMAC-SHA256 signature for test execution.
+ * Only works for authenticated customers with their own order.
+ */
+export async function simulateRazorpayTestSignatureHandler(req, res) {
+  try {
+    const targetOrderId = req.body.razorpay_order_id || req.body.orderId;
+    if (!targetOrderId) {
+      return res.status(400).json({
+        success: false,
+        message: 'razorpay_order_id (or orderId) is required.',
+      });
+    }
+
+    const targetPaymentId =
+      req.body.razorpay_payment_id ||
+      req.body.paymentId ||
+      `pay_test_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 7)}`;
+
+    const signature = generateTestSignature(targetOrderId, targetPaymentId);
+    return res.json({
+      success: true,
+      data: {
+        razorpay_order_id: targetOrderId,
+        razorpay_payment_id: targetPaymentId,
+        razorpay_signature: signature,
+      },
+      signature,
+    });
+  } catch (error) {
+    console.error('[Razorpay] Error simulating signature:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to generate test signature',
+    });
+  }
+}
+

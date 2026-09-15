@@ -311,13 +311,26 @@ export default function CustomerOrdersView() {
                     </div>
                   </div>
 
-                  {/* Status Badge */}
-                  <div className="flex items-center gap-2">
+                  {/* Badges */}
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span
                       className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border capitalize ${badge.classes}`}
                     >
                       <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />
                       {badge.label}
+                    </span>
+                    <span
+                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold border ${
+                        order.paymentStatus === 'paid'
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          : order.paymentStatus === 'failed'
+                          ? 'bg-rose-50 text-rose-700 border-rose-200'
+                          : 'bg-slate-100 text-slate-700 border-slate-200'
+                      }`}
+                    >
+                      {order.paymentMethod === 'razorpay'
+                        ? `Razorpay: ${order.paymentStatus?.toUpperCase() || 'PAID'}`
+                        : 'COD'}
                     </span>
                   </div>
                 </div>
